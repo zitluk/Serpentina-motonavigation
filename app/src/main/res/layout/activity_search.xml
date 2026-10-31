@@ -24,8 +24,48 @@
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Rychlé hledání nejbližších míst podle druhu: stejně široká velká tlačítka do rukavic -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginBottom="4dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/quickFuel"
+            style="@style/Glove.Toggle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:minHeight="72dp"
+            android:text="@string/quick_fuel" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/quickParking"
+            style="@style/Glove.Toggle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:minHeight="72dp"
+            android:text="@string/quick_parking" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/quickFood"
+            style="@style/Glove.Toggle"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:minHeight="72dp"
+            android:text="@string/quick_food" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/message"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"

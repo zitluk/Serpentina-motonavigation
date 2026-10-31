@@ -316,6 +316,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
             intent.putExtra(SearchActivity.EXTRA_NEAR_LAT, it.latitude)
             intent.putExtra(SearchActivity.EXTRA_NEAR_LON, it.longitude)
         }
+        mapCtl.center.let {
+            intent.putExtra(SearchActivity.EXTRA_CENTER_LAT, it.latitude)
+            intent.putExtra(SearchActivity.EXTRA_CENTER_LON, it.longitude)
+        }
         searchLauncher.launch(intent)
     }
 

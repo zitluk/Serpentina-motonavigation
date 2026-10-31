@@ -1,16 +1,20 @@
 package cz.motonavigace
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.graphics.drawable.BitmapDrawable
+import android.os.Build
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.getSystemService
 import androidx.core.text.HtmlCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cz.motonavigace.databinding.ActivitySettingsBinding
 
-/** Nastavení: vzhled, typ motocyklu, jazyk a informace o aplikaci. */
+/** Nastavení: vzhled, typ motocyklu, jazyk, informace o aplikaci a příspěvek na vývoj. */
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var b: ActivitySettingsBinding
@@ -44,6 +48,11 @@ class SettingsActivity : AppCompatActivity() {
         }
         b.about.title.text = getString(R.string.app_full_name)
         b.about.summary.text = getString(R.string.about_version, versionName())
+        b.donate.title.setText(R.string.settings_donate)
+        b.donate.summary.text = getString(R.string.donate_summary, getString(R.string.donate_account))
+        // QR kód na vlastním displeji telefon nenaskenuje, proto jde účet i zkopírovat
+        b.donate.root.setOnClickListener { copyDonateAccount() }
+        b.donateQr.setOnClickListener { copyDonateAccount() }
 
         b.theme.root.setOnClickListener {
             choose(R.string.settings_theme, AppTheme.entries.map { getString(it.label) }, Settings.theme.ordinal) {
@@ -119,6 +128,15 @@ class SettingsActivity : AppCompatActivity() {
             .setPositiveButton(android.R.string.ok, null)
             .show()
         dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
+    }
+
+    private fun copyDonateAccount() {
+        val account = getString(R.string.donate_account).replace(" ", "")
+        getSystemService<ClipboardManager>()?.setPrimaryClip(ClipData.newPlainText(getString(R.string.settings_donate), account))
+        // Android 13+ zobrazuje vlastní potvrzení o zkopírování
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            Toast.makeText(this, R.string.donate_copied, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun versionName(): String = BuildConfig.VERSION_NAME

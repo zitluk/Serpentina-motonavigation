@@ -16,6 +16,13 @@ data class Place(
     val distance: Double?,
 )
 
+/** Rychlé hledání podle druhu místa: hodnoty OSM tagu amenity. */
+enum class PoiCategory(val label: Int, val amenities: Set<String>) {
+    FUEL(R.string.quick_fuel, setOf("fuel")),
+    PARKING(R.string.quick_parking, setOf("parking", "motorcycle_parking")),
+    FOOD(R.string.quick_food, setOf("fast_food", "cafe", "restaurant", "pub")),
+}
+
 /**
  * Offline vyhledávání v databázích bodů zájmu Mapsforge (*.poi, SQLite).
  * Tabulka poi_data má v `data` tagy oddělené \r včetně normalized_name
@@ -74,6 +81,52 @@ object PoiSearch {
             .map { it.second }
             .distinctBy { it.name to it.description }
             .take(MAX_RESULTS)
+    }
+
+    /** Okruhy hledání v metrech – rozšiřují se, dokud není dost výsledků. */
+    private val CATEGORY_RADII = listOf(5_000.0, 20_000.0, 60_000.0)
+    private const val CATEGORY_ENOUGH = 20
+    val CATEGORY_MAX_RADIUS_KM = (CATEGORY_RADII.last() / 1000).toInt()
+
+    /** Nejbližší místa daného druhu kolem [around], seřazená podle vzdálenosti. */
+    suspend fun searchCategory(category: PoiCategory, around: LatLong): List<Place> = withContext(Dispatchers.IO) {
+        val found = mutableListOf<Place>()
+        for (radius in CATEGORY_RADII) {
+            found.clear()
+            // Obdélník kolem bodu, ať SQLite použije index na lat/lon; přesná vzdálenost se dopočítá
+            val dLat = radius / 111_320.0
+            val dLon = radius / (111_320.0 * Math.cos(Math.toRadians(around.latitude)))
+            val likes = category.amenities.joinToString(" OR ") { "d.data LIKE '%amenity=$it%'" }
+            for (file in Storage.poiFiles()) {
+                coroutineContext.ensureActive()
+                val db = runCatching {
+                    SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS)
+                }.getOrNull() ?: continue
+                db.use {
+                    it.rawQuery(
+                        "SELECT i.lat, i.lon, d.data FROM poi_index i JOIN poi_data d ON d.id = i.id " +
+                            "WHERE i.lat BETWEEN ? AND ? AND i.lon BETWEEN ? AND ? AND ($likes)",
+                        arrayOf(around.latitude - dLat, around.latitude + dLat, around.longitude - dLon, around.longitude + dLon)
+                            .map { v -> v.toString() }.toTypedArray(),
+                    ).use { c ->
+                        while (c.moveToNext()) {
+                            val tags = parseTags(c.getString(2))
+                            if (tags["amenity"] !in category.amenities) continue
+                            if (tags["access"] in setOf("private", "no")) continue
+                            val pos = LatLong(c.getDouble(0), c.getDouble(1))
+                            val distance = around.sphericalDistance(pos)
+                            if (distance > radius) continue
+                            val kind = describe(tags)
+                            // Parkoviště a pumpy často nemají jméno – pak stačí druh místa
+                            val name = tags["name"] ?: tags["brand"] ?: tags["operator"]
+                            found += Place(name ?: kind, if (name != null) kind else "", pos, distance)
+                        }
+                    }
+                }
+            }
+            if (found.size >= CATEGORY_ENOUGH) break
+        }
+        found.sortedBy { it.distance }.take(MAX_RESULTS)
     }
 
     private fun parseTags(data: String): Map<String, String> = data.split('\r').mapNotNull {

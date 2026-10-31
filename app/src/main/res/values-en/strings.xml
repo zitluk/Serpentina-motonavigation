@@ -130,6 +130,16 @@
     <string name="language_english">English</string>
     <string name="settings_about">About</string>
     <string name="about_version">Version %1$s</string>
+    <string name="quick_fuel">Fuel</string>
+    <string name="quick_parking">Parking</string>
+    <string name="quick_food">Food</string>
+    <string name="quick_nothing">Nothing found within %1$d km.</string>
+    <string name="quick_from_map">Distance from the map centre – your location is not known yet.</string>
+    <string name="settings_donate">Support development</string>
+    <string name="donate_account">CZ71 5500 0000 0016 4758 7003</string>
+    <string name="donate_summary">IBAN %1$s, payment reference: Serpentina. Scan the QR code in your banking app or tap to copy the IBAN. Thank you!</string>
+    <string name="donate_copied">IBAN copied</string>
+    <string name="donate_qr_description">QR code for a donation to the app development</string>
     <string name="about_text"><![CDATA[Offline navigation for motorcyclists – maps, route planning, ride recording and lean angle measurement without an internet connection.<br><br><b>Maps:</b> Mapsforge / VTM (LGPL), data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (ODbL)<br><b>Routing:</b> BRouter (MIT)<br><b>Points of interest:</b> Mapsforge POI<br><br>Manufacturer logos are trademarks of their owners (source: Wikimedia Commons) and only identify your motorcycle.]]></string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>

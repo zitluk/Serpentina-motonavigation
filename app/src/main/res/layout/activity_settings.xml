@@ -25,5 +25,17 @@
 
         <TextView style="@style/SettingsHeader" android:text="@string/settings_about" />
         <include android:id="@+id/about" layout="@layout/item_setting" />
+        <include android:id="@+id/donate" layout="@layout/item_setting" />
+
+        <!-- QR Platba na účet vývojáře; bílý podklad je součástí obrázku, takže jde naskenovat i v tmavém režimu -->
+        <ImageView
+            android:id="@+id/donateQr"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="@string/donate_qr_description"
+            android:scaleType="fitCenter"
+            android:src="@drawable/donate_qr" />
     </LinearLayout>
 </ScrollView>
