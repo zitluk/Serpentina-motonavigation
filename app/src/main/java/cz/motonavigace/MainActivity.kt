@@ -20,6 +20,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -120,14 +122,19 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Android 12+ ukáže ikonu spouštěcího aliasu sám, starší verze kreslí úvodní obrazovku podle stylu
+        if (Build.VERSION.SDK_INT < 31) setTheme(Settings.splashTheme)
+        installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Mapa pod systémovými lištami na všech verzích, odsazení řeší applyWindowInsets()
+        enableEdgeToEdge()
         b = ActivityMainBinding.inflate(layoutInflater)
         setContentView(b.root)
-        applyWindowInsets()
         adaptToScreen(resources.configuration)
         onBackPressedDispatcher.addCallback(this, stopNavigationOnBack)
 
         mapCtl = MapController(this, b.mapView, ::onMapLongPress)
+        applyWindowInsets()
         restoreMapPosition()
         // Naklonění jde nastavit, až mapa zná svou velikost
         b.mapView.post { setViewMode(MapViewMode.byId(prefs.getInt("view_mode", MapViewMode.PERSPECTIVE_3D.id))) }
@@ -293,6 +300,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
                     rightMargin = bars.right + panelMargin
                 }
             }
+            if (::mapCtl.isInitialized) mapCtl.setBottomInset(bars.left, bars.bottom)
             insets
         }
     }

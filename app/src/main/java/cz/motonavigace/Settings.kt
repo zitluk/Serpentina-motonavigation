@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import androidx.annotation.StringRes
+import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
@@ -42,7 +43,7 @@ enum class BikeType(
     SCOOTER(5, R.string.bike_scooter, R.string.bike_scooter_desc, RouteType.SHORTEST, true, true, 90.0),
 }
 
-class Manufacturer(val name: String, val launcherAlias: String)
+class Manufacturer(val name: String, val launcherAlias: String, @StyleRes val splashTheme: Int)
 
 /** Uživatelské nastavení aplikace. */
 object Settings {
@@ -74,29 +75,33 @@ object Settings {
      * ne logo; oficiální logo si lze vložit podle README.
      */
     val MANUFACTURERS = listOf(
-        Manufacturer("Aprilia", ".LauncherBrandAprilia"),
-        Manufacturer("Benelli", ".LauncherBrandBenelli"),
-        Manufacturer("BMW", ".LauncherBrandBmw"),
-        Manufacturer("CFMOTO", ".LauncherBrandCfmoto"),
-        Manufacturer("Ducati", ".LauncherBrandDucati"),
-        Manufacturer("Harley-Davidson", ".LauncherBrandHarleyDavidson"),
-        Manufacturer("Honda", ".LauncherBrandHonda"),
-        Manufacturer("Husqvarna", ".LauncherBrandHusqvarna"),
-        Manufacturer("Indian", ".LauncherBrandIndian"),
-        Manufacturer("Jawa", ".LauncherBrandJawa"),
-        Manufacturer("Kawasaki", ".LauncherBrandKawasaki"),
-        Manufacturer("KTM", ".LauncherBrandKtm"),
-        Manufacturer("Moto Guzzi", ".LauncherBrandMotoGuzzi"),
-        Manufacturer("MV Agusta", ".LauncherBrandMvAgusta"),
-        Manufacturer("Piaggio", ".LauncherBrandPiaggio"),
-        Manufacturer("Royal Enfield", ".LauncherBrandRoyalEnfield"),
-        Manufacturer("Suzuki", ".LauncherBrandSuzuki"),
-        Manufacturer("Triumph", ".LauncherBrandTriumph"),
-        Manufacturer("Vespa", ".LauncherBrandVespa"),
-        Manufacturer("Yamaha", ".LauncherBrandYamaha"),
+        Manufacturer("Aprilia", ".LauncherBrandAprilia", R.style.Theme_Motonavigace_Starting_Aprilia),
+        Manufacturer("Benelli", ".LauncherBrandBenelli", R.style.Theme_Motonavigace_Starting_Benelli),
+        Manufacturer("BMW", ".LauncherBrandBmw", R.style.Theme_Motonavigace_Starting_Bmw),
+        Manufacturer("CFMOTO", ".LauncherBrandCfmoto", R.style.Theme_Motonavigace_Starting_Cfmoto),
+        Manufacturer("Ducati", ".LauncherBrandDucati", R.style.Theme_Motonavigace_Starting_Ducati),
+        Manufacturer("Harley-Davidson", ".LauncherBrandHarleyDavidson", R.style.Theme_Motonavigace_Starting_HarleyDavidson),
+        Manufacturer("Honda", ".LauncherBrandHonda", R.style.Theme_Motonavigace_Starting_Honda),
+        Manufacturer("Husqvarna", ".LauncherBrandHusqvarna", R.style.Theme_Motonavigace_Starting_Husqvarna),
+        Manufacturer("Indian", ".LauncherBrandIndian", R.style.Theme_Motonavigace_Starting_Indian),
+        Manufacturer("Jawa", ".LauncherBrandJawa", R.style.Theme_Motonavigace_Starting_Jawa),
+        Manufacturer("Kawasaki", ".LauncherBrandKawasaki", R.style.Theme_Motonavigace_Starting_Kawasaki),
+        Manufacturer("KTM", ".LauncherBrandKtm", R.style.Theme_Motonavigace_Starting_Ktm),
+        Manufacturer("Moto Guzzi", ".LauncherBrandMotoGuzzi", R.style.Theme_Motonavigace_Starting_MotoGuzzi),
+        Manufacturer("MV Agusta", ".LauncherBrandMvAgusta", R.style.Theme_Motonavigace_Starting_MvAgusta),
+        Manufacturer("Piaggio", ".LauncherBrandPiaggio", R.style.Theme_Motonavigace_Starting_Piaggio),
+        Manufacturer("Royal Enfield", ".LauncherBrandRoyalEnfield", R.style.Theme_Motonavigace_Starting_RoyalEnfield),
+        Manufacturer("Suzuki", ".LauncherBrandSuzuki", R.style.Theme_Motonavigace_Starting_Suzuki),
+        Manufacturer("Triumph", ".LauncherBrandTriumph", R.style.Theme_Motonavigace_Starting_Triumph),
+        Manufacturer("Vespa", ".LauncherBrandVespa", R.style.Theme_Motonavigace_Starting_Vespa),
+        Manufacturer("Yamaha", ".LauncherBrandYamaha", R.style.Theme_Motonavigace_Starting_Yamaha),
     )
 
     private const val DEFAULT_ALIAS = ".LauncherDefault"
+
+    /** Styl úvodní obrazovky s logem zvoleného výrobce (pro Android 8–11). */
+    val splashTheme: Int
+        get() = MANUFACTURERS.firstOrNull { it.name == manufacturer }?.splashTheme ?: R.style.Theme_Motonavigace_Starting
 
     /**
      * Ikona aplikace podle výrobce. Android neumí ikonu změnit přímo, přepínáme

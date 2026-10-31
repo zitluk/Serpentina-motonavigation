@@ -52,6 +52,28 @@ Testy (statistiky jízdy):
 ./gradlew --project-cache-dir ~/Library/Caches/Motonavigace/gradle testDebugUnitTest
 ```
 
+## Kompatibilita s verzemi Androidu
+
+| | |
+|---|---|
+| Nejstarší podporovaná verze | Android 8.0 (API 26) |
+| Překlad a cílení (`compileSdk` / `targetSdk`) | Android 17 (API 37) |
+| Nástroje | Android Gradle Plugin 9.5, Gradle 9.8, Kotlin vestavěný v AGP, JDK 17 |
+
+Co je pro nové verze připravené:
+
+- **Kreslení pod systémové lišty** (od Androidu 15 povinné, od cílení na API 36 nejde vypnout) – všechny obrazovky si odsazení řeší samy (`EdgeToEdge.kt`, `applyWindowInsets` v `MainActivity`), stejně i na starých verzích.
+- **Úvodní obrazovka** – `androidx.core:core-splashscreen`: Android 12+ ukazuje ikonu spouštěcího aliasu (logo výrobce), Android 8–11 stejné logo ze stylu `Theme.Motonavigace.Starting.*`.
+- **Gesto zpět s náhledem** (Android 16+ pro aplikace cílící na API 36) – jen `OnBackPressedDispatcher`, žádné zastaralé `onBackPressed`.
+- **Velké displeje a otáčení** (Android 16+ ignoruje zámky orientace na tabletech) – aplikace žádnou orientaci nezamyká a rozložení se přizpůsobuje šířce.
+- **16 KB stránky paměti** (Google Play pro Android 15+) – nativní knihovna VTM je zarovnaná na 16 KB.
+- **Služba na popředí** pro záznam jízdy má typ `location` a oprávnění `FOREGROUND_SERVICE_LOCATION` (Android 14+); oznámení si říká o `POST_NOTIFICATIONS` (Android 13+).
+- **Jazyk aplikace** – systémový výběr jazyka pro aplikaci (Android 13+, `localeConfig`), na starších verzích ho ukládá AppCompat.
+- **Tematické ikony** (Android 13+) – všechny ikony mají monochromatickou vrstvu.
+- Android Lint (`./gradlew lintDebug`) bez chyb a bez volání API, které na Androidu 8 neexistuje.
+
+Ověřeno v emulátoru na Androidu 9 (mapa ve 3D, trasa, stahování, nastavení, jazyk, náklon, vyhledávání) a Androidu 15. Android 8.0 a 17 se na tomto Macu (Apple Silicon, málo místa na disku) spustit nepodařilo – Android 8 kryje Lint, Android 17 cílení a překlad.
+
 ## Známá omezení
 - Čas se odhaduje podle třídy silnice a rychlostních limitů z OSM, ne podle skutečného provozu.
 - Zatáčkové trasy se řídí třídami silnic, ne skutečnou geometrií zatáček.

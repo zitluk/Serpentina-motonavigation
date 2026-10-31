@@ -55,7 +55,6 @@
     <string name="recording_start">Start ride recording</string>
     <string name="recording_stop">Stop recording</string>
     <string name="recording_saved">Ride saved: %1$s</string>
-    <string name="recording_too_short">The recording was too short and was not saved.</string>
     <string name="round_trip">Ride around</string>
     <string name="round_trip_length">%1$d km · approx. %2$s</string>
     <string name="round_trip_create">Create</string>

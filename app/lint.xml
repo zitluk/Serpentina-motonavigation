@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Adaptivní ikony musí zůstat v mipmap-anydpi-v26, jinak je aapt nenajde -->
+    <issue id="ObsoleteSdkInt" severity="ignore" />
+    <!-- localeConfig se na starších Androidech prostě ignoruje, jazyk tam řeší AppCompat -->
+    <issue id="UnusedAttribute">
+        <ignore path="src/main/AndroidManifest.xml" />
+    </issue>
+</lint>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Úvodní obrazovka (androidx core-splashscreen). Android 12+ kreslí ikonu spouštěcího
+     aliasu sám; na Androidu 8–11 MainActivity před installSplashScreen() nastaví styl výrobce. -->
+<resources>
+    <style name="Theme.Motonavigace.Starting" parent="Theme.SplashScreen.IconBackground">
+        <item name="postSplashScreenTheme">@style/Theme.Motonavigace</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/launcher_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Aprilia">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_aprilia</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Benelli">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_benelli</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/brand_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Bmw">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_bmw</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Cfmoto">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_cfmoto</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Ducati">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_ducati</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.HarleyDavidson">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_harley_davidson</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Honda">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_honda</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Husqvarna">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_husqvarna</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Indian">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_indian</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Jawa">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_jawa</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/brand_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Kawasaki">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_kawasaki</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Ktm">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_ktm</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.MotoGuzzi">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_moto_guzzi</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/brand_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.MvAgusta">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_mv_agusta</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Piaggio">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_piaggio</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.RoyalEnfield">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_royal_enfield</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Suzuki">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_suzuki</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Triumph">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_triumph</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Vespa">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_vespa</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+    <style name="Theme.Motonavigace.Starting.Yamaha">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_yamaha</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>
+    </style>
+</resources>

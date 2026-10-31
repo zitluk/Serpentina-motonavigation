@@ -18,6 +18,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         b = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(b.root)
+        setupEdgeToEdge(b.root)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         b.theme.title.setText(R.string.settings_theme)
@@ -92,6 +93,5 @@ class SettingsActivity : AppCompatActivity() {
         dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
     }
 
-    private fun versionName(): String =
-        packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
+    private fun versionName(): String = BuildConfig.VERSION_NAME
 }

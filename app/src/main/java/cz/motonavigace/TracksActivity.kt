@@ -52,6 +52,7 @@ class TracksActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         b = ActivityTracksBinding.inflate(layoutInflater)
         setContentView(b.root)
+        setupEdgeToEdge(b.root)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         b.list.layoutManager = LinearLayoutManager(this)
         b.list.adapter = Adapter()

@@ -75,6 +75,8 @@ class MapController(
         private set
     private var navigating = false
 
+    private lateinit var scaleLayer: MapScaleBarLayer
+
     init {
         map.viewport().setMinZoomLevel(4)
         map.viewport().setMaxZoomLevel(20)
@@ -89,7 +91,7 @@ class MapController(
         layers.add(location)
 
         val scaleBar = DefaultMapScaleBar(map)
-        val scaleLayer = MapScaleBarLayer(map, scaleBar)
+        scaleLayer = MapScaleBarLayer(map, scaleBar)
         scaleLayer.renderer.setPosition(GLViewport.Position.BOTTOM_LEFT)
         scaleLayer.renderer.setOffset(5 * CanvasAdapter.getScale(), 0f)
         layers.add(scaleLayer)
@@ -132,6 +134,12 @@ class MapController(
     }
 
     // ---------------------------------------------------------------- poloha mapy
+
+    /** Měřítko nad systémovými lištami (mapa se kreslí až k okraji displeje). */
+    fun setBottomInset(left: Int, bottom: Int) {
+        scaleLayer.renderer.setOffset(5 * CanvasAdapter.getScale() + left, bottom.toFloat())
+        map.updateMap(true)
+    }
 
     val center: LatLong get() = map.mapPosition.let { LatLong(it.latitude, it.longitude) }
     val zoomLevel: Int get() = map.mapPosition.zoomLevel

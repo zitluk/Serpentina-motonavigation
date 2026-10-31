@@ -40,6 +40,7 @@ class SearchActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         b = ActivitySearchBinding.inflate(layoutInflater)
         setContentView(b.root)
+        setupEdgeToEdge(b.root)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if (intent.hasExtra(EXTRA_NEAR_LAT)) {

@@ -11,6 +11,7 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.Surface
@@ -51,6 +52,7 @@ class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener 
         super.onCreate(savedInstanceState)
         b = ActivityLeanBinding.inflate(layoutInflater)
         setContentView(b.root)
+        setupEdgeToEdge(b.root)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
@@ -161,14 +163,18 @@ class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener 
      * Senzory hlásí osy podle přirozené orientace telefonu; výpočet počítá s osou x
      * vodorovně přes displej, takže při otočené obrazovce osy přemapujeme.
      */
-    @Suppress("DEPRECATION")
     private fun toScreenAxes(x: Float, y: Float): Pair<Float, Float> =
-        when (windowManager.defaultDisplay.rotation) {
+        when (displayRotation()) {
             Surface.ROTATION_90 -> -y to x
             Surface.ROTATION_180 -> -x to -y
             Surface.ROTATION_270 -> y to -x
             else -> x to y
         }
+
+    @Suppress("DEPRECATION")
+    private fun displayRotation(): Int =
+        if (Build.VERSION.SDK_INT >= 30) display?.rotation ?: Surface.ROTATION_0
+        else windowManager.defaultDisplay.rotation
 
     private fun render() {
         val s = meter.stats

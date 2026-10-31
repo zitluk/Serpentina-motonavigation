@@ -1,16 +1,17 @@
 plugins {
+    // AGP 9 má Kotlin vestavěný, plugin org.jetbrains.kotlin.android se už nepoužívá
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 android {
     namespace = "cz.motonavigace"
-    compileSdk = 35
+    // Překlad proti Androidu 17, cílení na Android 17 – běží od Androidu 8.0 (minSdk 26)
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "cz.motonavigace"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
     }
@@ -24,11 +25,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
     packaging {
         resources.excludes += "META-INF/*"
@@ -56,13 +55,21 @@ dependencies {
         implementation("com.github.abrensch.brouter:brouter-$m:$brouter")
     }
 
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.activity:activity-ktx:1.9.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("androidx.core:core-ktx:1.19.1")
+    implementation("androidx.appcompat:appcompat:1.8.0")
+    implementation("androidx.activity:activity-ktx:1.13.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
+    implementation("androidx.core:core-splashscreen:1.2.0")
+    implementation("com.google.android.material:material:1.14.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
     testImplementation("junit:junit:4.13.2")
+}
+
+kotlin {
+    compilerOptions {
+        // @StringRes apod. na parametrech konstruktoru platí i pro vlastnost (budoucí výchozí chování Kotlinu)
+        freeCompilerArgs.add("-Xannotation-default-target=param-property")
+    }
 }

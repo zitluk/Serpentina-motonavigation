@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Serpentina</string>
+    <string name="app_name" translatable="false">Serpentina</string>
     <!-- Plný název – pod ikonou by se nevešel, proto jen v O aplikaci a v obchodě -->
     <string name="app_full_name" translatable="false">Serpentina-motonavigation</string>
     <string name="offline_data">Stažení map</string>
@@ -57,7 +57,6 @@
     <string name="recording_start">Spustit záznam jízdy</string>
     <string name="recording_stop">Zastavit záznam</string>
     <string name="recording_saved">Jízda uložena: %1$s</string>
-    <string name="recording_too_short">Záznam byl příliš krátký, neuložil se.</string>
     <string name="round_trip">Projížďka po okolí</string>
     <string name="round_trip_length">%1$d km · cca %2$s</string>
     <string name="round_trip_create">Vytvořit</string>

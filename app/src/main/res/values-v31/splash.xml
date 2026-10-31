@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+: úvodní obrazovku kreslí systém z ikony spouštěcího aliasu (logo výrobce).
+         Styl knihovny by ikonu přepsal pevnou ikonou, proto tu jen běžné téma aplikace. -->
+    <style name="Theme.Motonavigace.Starting" parent="Theme.Motonavigace" />
+</resources>

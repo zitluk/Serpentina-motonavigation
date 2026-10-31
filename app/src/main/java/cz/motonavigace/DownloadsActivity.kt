@@ -35,6 +35,7 @@ class DownloadsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val binding = ActivityDownloadsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupEdgeToEdge(binding.root)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.list.layoutManager = LinearLayoutManager(this)
         binding.list.adapter = adapter

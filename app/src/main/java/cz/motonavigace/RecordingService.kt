@@ -128,10 +128,10 @@ class RecordingService : Service(), LocationListener {
     @SuppressLint("MissingPermission")
     private fun startRecording() {
         createChannel()
-        ServiceCompat.startForeground(
-            this, NOTIFICATION_ID, notification(),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
-        )
+        // ServiceCompat typ služby na Androidu 8–9 (bez typů) sám vynechá
+        @SuppressLint("InlinedApi")
+        val type = ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(), type)
         // Navážeme na rozpracovaný záznam (služba mohla být systémem restartována)
         val resumed = readJournal()
         last = resumed.lastOrNull()
