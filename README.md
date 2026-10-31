@@ -4,6 +4,12 @@ Pod ikonou v telefonu se aplikace jmenuje **Serpentina** (plný název by launch
 
 Offline motonavigace pro Android inspirovaná aplikací [Cruiser](https://github.com/devemux86/cruiser).
 
+## Stažení do telefonu
+
+**[Stáhnout Serpentina.apk](https://github.com/zitluk/Serpentina-motonavigation/releases/latest/download/Serpentina.apk)** – vždy nejnovější verze, Android 8.0 a novější.
+
+Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlížeče (Android se zeptá sám). Novější verze se instaluje přes starší, data a mapy zůstanou. Přehled verzí: [Releases](https://github.com/zitluk/Serpentina-motonavigation/releases).
+
 - **Mapy:** [VTM](https://github.com/mapsforge/vtm) 0.25 (OpenGL engine od Mapsforge) nad offline `.map` soubory Mapsforge, téma MOTORIDER bez rušivých vrstev (parkoviště, obchody, MHD, restaurace…), 3D budovy
 - **Zobrazení mapy:** 3D (nakloněná, po směru jízdy), 2D (po směru jízdy), Sever nahoře – tlačítko pod stahováním
 - **Routing:** [BRouter](https://github.com/abrensch/brouter) 1.7.9 přímo v aplikaci, vlastní profil `app/src/main/assets/brouter/moto.brf`
@@ -54,6 +60,16 @@ Testy (statistiky jízdy):
 
 ```bash
 ./gradlew --project-cache-dir ~/Library/Caches/Motonavigace/gradle testDebugUnitTest
+```
+
+### Vydání
+
+Vydání se podepisuje vlastním klíčem, který v repozitáři není. Na počítači vývojáře leží v `~/.android/serpentina-release.jks` a přihlašovací údaje v `~/.gradle/gradle.properties` (`serpentinaStoreFile`, `serpentinaStorePassword`, `serpentinaKeyAlias`, `serpentinaKeyPassword`). Bez nich se vydání sestaví nepodepsané. Klíč je nutné zálohovat, bez něj nepůjdou další verze nainstalovat přes stávající.
+
+Postup: zvýšit `versionCode` a `versionName` v `app/build.gradle.kts`, sestavit `assembleRelease` a APK nahrát jako `Serpentina.apk` do nového vydání:
+
+```bash
+gh release create v0.2.0 "Serpentina.apk#Serpentina 0.2.0 (APK)" --title "Serpentina 0.2.0" --notes "…"
 ```
 
 ### Windows
