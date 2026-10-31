@@ -1,0 +1,194 @@
+#
+# Serpentina – motocyklový profil pro BRouter
+#
+# Vychází z profilu moped.brf. Parametr "route_type" volí typ trasy:
+#   0 = nejrychlejší, 1 = nejkratší, 2 = ekonomická,
+#   3 = více zatáček, 4 = maximum zatáček
+# Zatáčkové varianty preferují silnice 2. a 3. třídy, které bývají
+# klikatější; skutečnou geometrii zatáček BRouter nehodnotí.
+# Aplikace parametry přepisuje přes RoutingContext.keyValues
+# (čísla, booleany jako 1/0).
+#
+
+---context:global
+
+assign downhillcost 0
+assign downhillcutoff 0
+assign uphillcost 0
+assign uphillcutoff 0
+
+assign   validForBikes       0
+assign   validForCars        1
+
+assign route_type       = 0      # %route_type% | 0=nejrychlejší 1=nejkratší 2=ekonomická 3=více zatáček 4=maximum zatáček | number
+assign avoid_motorways  = false  # %avoid_motorways% | Vyhnout se dálnicím | boolean
+assign avoid_unpaved    = true   # %avoid_unpaved% | Vyhnout se nezpevněným cestám | boolean
+assign avoid_ferries    = false  # %avoid_ferries% | Vyhnout se trajektům | boolean
+
+assign add_beeline          = false
+assign turnInstructionMode  = 1
+
+---context:way   # following code refers to way-tags
+
+assign turncost = if junction=roundabout then 0
+                  else 90
+
+assign initialclassifier =
+     if route=ferry then 1
+     else 0
+
+assign initialcost switch route=ferry switch avoid_ferries 1000000 20000 0
+
+#
+# calculate logical motorcycle access
+#
+assign isresidentialorliving = or highway=residential|living_street living_street=yes
+
+assign motorverhicleaccess
+              switch motor_vehicle=
+                     switch vehicle=
+                            switch access=
+                                   switch or highway=motorway highway=motorway_link    1
+                                   switch or highway=trunk highway=trunk_link          1
+                                   switch or highway=primary highway=primary_link      1
+                                   switch or highway=secondary highway=secondary_link  1
+                                   switch or highway=tertiary highway=tertiary_link    1
+                                   switch    highway=unclassified                      1
+                                   switch    route=ferry                               1
+                                   switch    isresidentialorliving                     1
+                                   switch    highway=service                           1
+                                   switch    highway=track                             1
+                                   0
+                                   or access=yes or access=designated access=destination
+                            or vehicle=yes or vehicle=designated vehicle=destination
+                     or motor_vehicle=yes or motor_vehicle=designated motor_vehicle=destination
+
+assign motorcycleaccess
+       switch motorcycle=
+              motorverhicleaccess
+              or motorcycle=yes or motorcycle=designated motorcycle=destination
+
+assign accesspenalty
+       switch motorcycleaccess 0 10000
+
+assign onewaypenalty
+       switch switch reversedirection=yes
+                     switch oneway=
+                            junction=roundabout
+                            or oneway=yes or oneway=true oneway=1
+                     oneway=-1
+              10000
+              0.0
+
+assign ispaved or surface= or surface=paved or surface=asphalt or surface=concrete surface=paving_stones
+assign isunpaved not ispaved
+
+assign ismotorway   or highway=motorway highway=motorway_link
+assign islinktype   highway=motorway_link|trunk_link|primary_link|secondary_link|tertiary_link
+
+assign motorwaypenalty switch and ismotorway avoid_motorways 10000 0
+assign unpavedpenalty  switch and isunpaved avoid_unpaved 3 0
+
+# Cena za metr podle třídy silnice a typu trasy.
+# Pořadí hodnot: nejkratší, ekonomická, více zatáček, maximum zatáček, nejrychlejší
+assign is_short  equal route_type 1
+assign is_eco    equal route_type 2
+assign is_curvy  equal route_type 3
+assign is_maxcur equal route_type 4
+
+assign c_motorway     switch is_short 1.0 switch is_eco 1.5  switch is_curvy 4.0 switch is_maxcur 8.0  1.0
+assign c_trunk        switch is_short 1.0 switch is_eco 1.25 switch is_curvy 2.5 switch is_maxcur 4.0  1.1
+assign c_primary      switch is_short 1.0 switch is_eco 1.05 switch is_curvy 1.6 switch is_maxcur 2.2  1.2
+assign c_secondary    switch is_short 1.0 switch is_eco 1.0  switch is_curvy 1.2 switch is_maxcur 1.3  1.4
+assign c_tertiary     switch is_short 1.0 switch is_eco 1.1  switch is_curvy 1.1 switch is_maxcur 1.0  1.6
+assign c_unclassified switch is_short 1.0 switch is_eco 1.3  switch is_curvy 1.2 switch is_maxcur 1.05 1.9
+assign c_residential  switch is_short 1.1 switch is_eco 1.6  switch is_curvy 2.5 switch is_maxcur 2.8  2.5
+assign c_service      switch is_short 1.5 switch is_eco 3.0  switch is_curvy 4.0 switch is_maxcur 4.0  4.0
+
+assign costfactor
+
+ add max max onewaypenalty accesspenalty motorwaypenalty
+
+ add unpavedpenalty
+
+ add switch islinktype 0.05 0
+
+ switch and highway= not route=ferry  10000
+
+ switch    ismotorway                                c_motorway
+ switch or highway=trunk highway=trunk_link          c_trunk
+ switch or highway=primary highway=primary_link      c_primary
+ switch or highway=secondary highway=secondary_link  c_secondary
+ switch or highway=tertiary highway=tertiary_link    c_tertiary
+ switch    highway=unclassified                      c_unclassified
+ switch    route=ferry                               5.67
+ switch    isresidentialorliving                     c_residential
+ switch    highway=service                           c_service
+ switch    highway=track
+  switch tracktype=grade1 5
+  switch ispaved 5
+  30
+ 10000
+
+# way priorities used for voice hint generation
+
+assign priorityclassifier =
+
+  if      ( highway=motorway                  ) then  30
+  else if ( highway=motorway_link             ) then  29
+  else if ( highway=trunk                     ) then  28
+  else if ( highway=trunk_link                ) then  27
+  else if ( highway=primary                   ) then  26
+  else if ( highway=primary_link              ) then  25
+  else if ( highway=secondary                 ) then  24
+  else if ( highway=secondary_link            ) then  23
+  else if ( highway=tertiary                  ) then  22
+  else if ( highway=tertiary_link             ) then  21
+  else if ( highway=unclassified              ) then  20
+  else if ( isresidentialorliving             ) then  6
+  else if ( highway=service                   ) then  6
+  else if ( highway=track                     ) then if tracktype=grade1 then 4 else 2
+  else 0
+
+assign isbadoneway = not equal onewaypenalty 0
+assign isgoodoneway = if reversedirection=yes then oneway=-1
+                      else if oneway= then junction=roundabout else oneway=yes|true|1
+assign isroundabout = junction=roundabout
+assign isgoodforcars = if greater priorityclassifier 6 then true
+                  else if ( or isresidentialorliving highway=service ) then true
+                  else if ( and highway=track tracktype=grade1 ) then true
+                  else false
+
+assign classifiermask add          isbadoneway
+                      add multiply isgoodoneway   2
+                      add multiply isroundabout   4
+                      add multiply islinktype     8
+                          multiply isgoodforcars 16
+
+# BRouter názvy silnic nemá; maxspeed chceme ve zprávě u bodů kvůli odhadu času
+assign dummyUsage = maxspeed=
+
+---context:node  # following code refers to node tags
+
+assign motorvehicleaccess
+              switch motor_vehicle=
+                     switch vehicle=
+                            switch access=
+                                   switch barrier=gate 0
+                                   switch barrier=bollard 0
+                                   switch barrier=lift_gate 0
+                                   switch barrier=cycle_barrier 0
+                                   1
+                                   or access=yes or access=designated access=destination
+                            or vehicle=yes or vehicle=designated vehicle=destination
+                     or motor_vehicle=yes or motor_vehicle=designated motor_vehicle=destination
+
+assign motorcycleaccess
+       switch motorcycle=
+              motorvehicleaccess
+              or motorcycle=yes or motorcycle=designated motorcycle=destination
+
+assign initialcost
+       switch motorcycleaccess
+              0
+              1000000

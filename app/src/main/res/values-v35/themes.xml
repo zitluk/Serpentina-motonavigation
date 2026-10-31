@@ -1,0 +1,7 @@
+<resources>
+    <!-- Seznam s action barem nepotřebuje kreslení pod systémové lišty -->
+    <style name="Theme.Motonavigace.WithActionBar" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">#E53935</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+</resources>

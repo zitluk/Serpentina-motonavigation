@@ -1,0 +1,20 @@
+<resources>
+    <style name="Theme.Motonavigace" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#E53935</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#FFDAD6</item>
+        <item name="colorSecondary">#37474F</item>
+    </style>
+    <style name="Theme.Motonavigace.WithActionBar" parent="Theme.Material3.DayNight">
+        <item name="colorPrimary">#E53935</item>
+    </style>
+    <style name="SettingsHeader">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingHorizontal">16dp</item>
+        <item name="android:paddingTop">20dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+</resources>

@@ -1,0 +1,164 @@
+package cz.motonavigace
+
+import btools.router.OsmNodeNamed
+import btools.router.RoutingContext
+import btools.router.RoutingEngine
+import btools.router.TrackAccess
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.mapsforge.core.model.LatLong
+import java.io.File
+import kotlin.math.floor
+import kotlin.math.min
+
+/** Typ trasy; [id] odpovídá parametru route_type v profilu moto.brf. */
+enum class RouteType(val id: Int, @androidx.annotation.StringRes val label: Int) {
+    FASTEST(0, R.string.route_fastest),
+    SHORTEST(1, R.string.route_shortest),
+    ECO(2, R.string.route_eco),
+    CURVY(3, R.string.route_curvy),
+    MAX_CURVY(4, R.string.route_max_curvy),
+}
+
+data class RouteOptions(
+    val type: RouteType = RouteType.FASTEST,
+    val avoidMotorways: Boolean = false,
+    val avoidUnpaved: Boolean = true,
+    val avoidFerries: Boolean = false,
+)
+
+/** Manévr na trase (odbočení, kruhový objezd, cíl…). */
+data class Maneuver(
+    /** Index bodu trasy, kde se manévr provádí. */
+    val index: Int,
+    /** Vzdálenost od startu trasy v metrech. */
+    val distance: Double,
+    /** Kód BRouteru: C, TL, TSLL, TSHL, TR, TSLR, TSHR, KL, KR, TU, RNDB, RNLB, EL, ER, END. */
+    val command: String,
+    /** Výjezd z kruhového objezdu, jinak 0. */
+    val exit: Int,
+)
+
+class Route(
+    val points: List<LatLong>,
+    /** Kumulativní vzdálenost od startu v metrech pro každý bod. */
+    val distances: DoubleArray,
+    /** Kumulativní odhadovaný čas od startu v sekundách pro každý bod. */
+    val times: DoubleArray,
+    val maneuvers: List<Maneuver>,
+    val lengthMeters: Int,
+) {
+    val durationSeconds get() = times.last().toInt()
+}
+
+/** Chyba výpočtu trasy; text se skládá až v UI podle jazyka aplikace. */
+class RoutingException(@androidx.annotation.StringRes val text: Int, val detail: String = "") : Exception(detail) {
+    fun describe(context: android.content.Context): String = context.getString(text, detail)
+}
+
+/** Offline výpočet trasy přes BRouter nad staženými rd5 segmenty. */
+object RoutePlanner {
+    private const val PROFILE = "moto.brf"
+    private const val MAX_RUNNING_MS = 60_000L
+    /** Styl pokynů OsmAnd – jakýkoli pevný styl; 1 (auto) by pokyny vůbec negeneroval. */
+    private const val TURN_INSTRUCTION_MODE = 3
+
+    /** Segmenty, které musí být stažené, aby šlo trasu spočítat (aspoň pro všechny body trasy). */
+    fun missingSegments(waypoints: List<LatLong>): List<String> = waypoints
+        .map { Region.segmentName(floor5(it.longitude), floor5(it.latitude)) }
+        .distinct()
+        .filterNot(Storage::hasSegment)
+
+    /**
+     * @param looseWaypoints průjezdní body nemusí ležet u silnice (vygenerovaný okruh) –
+     *   BRouter pak hledá nejbližší cestu i ve větší vzdálenosti.
+     */
+    suspend fun calculate(waypoints: List<LatLong>, options: RouteOptions, looseWaypoints: Boolean = false): Route =
+        withContext(Dispatchers.Default) {
+            require(waypoints.size >= 2) { "Trasa potřebuje start a cíl" }
+            val missing = missingSegments(waypoints)
+            if (missing.isNotEmpty()) {
+                throw RoutingException(R.string.error_missing_segments, missing.joinToString())
+            }
+
+            val rc = RoutingContext().apply {
+                localFunction = File(Storage.profilesDir, PROFILE).absolutePath
+                keyValues = mapOf(
+                    "route_type" to options.type.id.toString(),
+                    "avoid_motorways" to options.avoidMotorways.flag(),
+                    "avoid_unpaved" to options.avoidUnpaved.flag(),
+                    "avoid_ferries" to options.avoidFerries.flag(),
+                )
+                turnInstructionMode = TURN_INSTRUCTION_MODE
+                useDynamicDistance = looseWaypoints
+            }
+            val nodes = waypoints.mapIndexed { i, p ->
+                OsmNodeNamed().apply {
+                    name = if (i == 0) "from" else if (i == waypoints.lastIndex) "to" else "via$i"
+                    ilon = ((p.longitude + 180.0) * 1_000_000 + 0.5).toInt()
+                    ilat = ((p.latitude + 90.0) * 1_000_000 + 0.5).toInt()
+                }
+            }
+
+            val engine = RoutingEngine(null, null, Storage.segmentsDir, nodes, rc)
+            engine.quite = true
+            engine.doRun(MAX_RUNNING_MS)
+
+            engine.errorMessage?.let { throw RoutingException(R.string.error_routing, it) }
+            val track = engine.foundTrack ?: throw RoutingException(R.string.error_no_route)
+
+            val n = track.nodes.size
+            val pts = ArrayList<LatLong>(n)
+            val dist = DoubleArray(n)
+            val time = DoubleArray(n)
+            track.nodes.forEachIndexed { i, node ->
+                pts += LatLong(node.iLat / 1_000_000.0 - 90.0, node.iLon / 1_000_000.0 - 180.0)
+                if (i > 0) {
+                    val d = node.calcDistance(track.nodes[i - 1]).toDouble()
+                    dist[i] = dist[i - 1] + d
+                    time[i] = time[i - 1] + d / (speedKmh(TrackAccess.wayTags(node)) / 3.6)
+                }
+            }
+            val maneuvers = TrackAccess.hints(track)
+                .filter { it.index in 0 until n }
+                .map { Maneuver(it.index, dist[it.index], it.command, it.exit) }
+                .plus(Maneuver(n - 1, dist[n - 1], "END", 0))
+                .distinctBy { it.index to it.command }
+            Route(pts, dist, time, maneuvers, track.distance)
+        }
+
+    /**
+     * Odhad cestovní rychlosti na motorce podle třídy silnice, omezený
+     * rychlostním limitem z OSM. BRouter u nákladového profilu vrací
+     * nepoužitelný čas, proto ho počítáme sami.
+     */
+    private fun speedKmh(wayTags: String?): Double {
+        val tags = wayTags.orEmpty().split(' ').mapNotNull {
+            val eq = it.indexOf('=')
+            if (eq > 0) it.substring(0, eq) to it.substring(eq + 1) else null
+        }.toMap()
+        val typical = when (tags["highway"]) {
+            "motorway" -> 120.0
+            "trunk" -> 90.0
+            "primary" -> 75.0
+            "secondary" -> 65.0
+            "tertiary" -> 55.0
+            "unclassified" -> 45.0
+            "motorway_link", "trunk_link" -> 55.0
+            "primary_link", "secondary_link", "tertiary_link" -> 40.0
+            "residential" -> 30.0
+            "living_street" -> 15.0
+            "service", "track" -> 20.0
+            null -> if (tags["route"] == "ferry") 15.0 else 30.0
+            else -> 30.0
+        }
+        val limit = tags["maxspeed"]?.toDoubleOrNull()
+        val speed = if (limit != null && limit > 0) min(typical, limit) else typical
+        return min(speed, Settings.bike.maxKmh)
+    }
+
+    private fun floor5(v: Double) = (floor(v / 5) * 5).toInt()
+
+    /** BRouter čte hodnoty z keyValues jako čísla, booleany tedy jako 1/0. */
+    private fun Boolean.flag() = if (this) "1" else "0"
+}
