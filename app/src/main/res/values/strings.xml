@@ -138,4 +138,12 @@
     <string name="settings_manufacturer">Výrobce</string>
     <string name="manufacturer_none">Nevybráno</string>
     <string name="icon_changed">Ikona aplikace je teď %1$s. Na ploše se může projevit až za chvíli.</string>
+    <string name="settings_marker">Ikona na mapě</string>
+    <string name="marker_shape">Tvar ikony</string>
+    <string name="marker_color">Barva ikony</string>
+    <string name="marker_arrow">Šipka</string>
+    <string-array name="marker_color_names">
+        <item>Červená</item><item>Oranžová</item><item>Žlutá</item><item>Zelená</item>
+        <item>Modrá</item><item>Fialová</item><item>Černá</item><item>Bílá</item>
+    </string-array>
 </resources>

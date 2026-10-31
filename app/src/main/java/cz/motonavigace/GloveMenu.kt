@@ -2,6 +2,7 @@ package cz.motonavigace
 
 import android.content.Context
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -18,7 +19,7 @@ import com.google.android.material.color.MaterialColors
  */
 object GloveMenu {
 
-    class Item(val title: String, val checked: Boolean = false, val action: () -> Unit)
+    class Item(val title: String, val checked: Boolean = false, val icon: Drawable? = null, val action: () -> Unit)
 
     fun show(context: Context, title: String?, items: List<Item>) {
         val dialog = BottomSheetDialog(context)
@@ -51,6 +52,11 @@ object GloveMenu {
                 minHeight = dp(72)
                 setPadding(dp(24), 0, dp(24), 0)
                 setBackgroundResource(ripple)
+                item.icon?.let {
+                    it.setBounds(0, 0, dp(48), dp(48))
+                    setCompoundDrawablesRelative(it, null, null, null)
+                    compoundDrawablePadding = dp(20)
+                }
                 setOnClickListener { dialog.dismiss(); item.action() }
             }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         }

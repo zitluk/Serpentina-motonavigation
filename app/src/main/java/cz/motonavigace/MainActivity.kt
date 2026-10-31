@@ -406,6 +406,32 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 
+    private var headingFrom: LatLong? = null
+    private var lastHeading: Float? = null
+
+    /**
+     * Směr ikony: kurz z GPS v pohybu, jinak směr z posunu od posledního místa
+     * (některé přijímače kurz nehlásí). Při stání drží poslední známý směr.
+     */
+    private fun headingFor(location: Location, pos: LatLong): Float? {
+        if (location.hasBearing() && location.speed > 1.5f) {
+            lastHeading = location.bearing
+            headingFrom = pos
+            return lastHeading
+        }
+        val from = headingFrom
+        if (from == null) { headingFrom = pos; return lastHeading }
+        if (from.sphericalDistance(pos) > 8) {
+            val dLon = Math.toRadians(pos.longitude - from.longitude)
+            val lat1 = Math.toRadians(from.latitude); val lat2 = Math.toRadians(pos.latitude)
+            val y = Math.sin(dLon) * Math.cos(lat2)
+            val x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+            lastHeading = ((Math.toDegrees(Math.atan2(y, x)) + 360) % 360).toFloat()
+            headingFrom = pos
+        }
+        return lastHeading
+    }
+
     override fun onLocationChanged(location: Location) {
         // Síťová poloha nesmí přebít čerstvou a přesnější GPS
         val prev = lastLocation
@@ -415,7 +441,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         lastLocation = location
         val pos = LatLong(location.latitude, location.longitude)
-        mapCtl.setLocation(pos, location.accuracy)
+        mapCtl.setLocation(pos, headingFor(location, pos))
 
         navigator?.let { onNavigationFix(it, location, pos); return }
 

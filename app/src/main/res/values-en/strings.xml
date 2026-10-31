@@ -136,4 +136,12 @@
     <string name="settings_manufacturer">Manufacturer</string>
     <string name="manufacturer_none">Not selected</string>
     <string name="icon_changed">The app icon is now %1$s. The home screen may take a moment to update.</string>
+    <string name="settings_marker">Map icon</string>
+    <string name="marker_shape">Icon shape</string>
+    <string name="marker_color">Icon colour</string>
+    <string name="marker_arrow">Arrow</string>
+    <string-array name="marker_color_names">
+        <item>Red</item><item>Orange</item><item>Yellow</item><item>Green</item>
+        <item>Blue</item><item>Purple</item><item>Black</item><item>White</item>
+    </string-array>
 </resources>

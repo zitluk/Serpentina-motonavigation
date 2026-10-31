@@ -1,5 +1,6 @@
 package cz.motonavigace
 
+import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
@@ -25,6 +26,22 @@ class SettingsActivity : AppCompatActivity() {
         b.manufacturer.title.setText(R.string.settings_manufacturer)
         b.bike.title.setText(R.string.settings_bike_type)
         b.language.title.setText(R.string.settings_language_app)
+        b.markerShape.title.setText(R.string.marker_shape)
+        b.markerColor.title.setText(R.string.marker_color)
+        b.markerShape.root.setOnClickListener {
+            GloveMenu.show(this, getString(R.string.marker_shape), MarkerShape.entries.map { shape ->
+                GloveMenu.Item(getString(shape.label), shape == Settings.markerShape, markerIcon(shape, Settings.markerColor)) {
+                    Settings.markerShape = shape; refresh()
+                }
+            })
+        }
+        b.markerColor.root.setOnClickListener {
+            GloveMenu.show(this, getString(R.string.marker_color), MARKER_COLORS.mapIndexed { i, color ->
+                GloveMenu.Item(colorNames[i], color == Settings.markerColor, markerIcon(Settings.markerShape, color)) {
+                    Settings.markerColor = color; refresh()
+                }
+            })
+        }
         b.about.title.text = getString(R.string.app_full_name)
         b.about.summary.text = getString(R.string.about_version, versionName())
 
@@ -70,7 +87,18 @@ class SettingsActivity : AppCompatActivity() {
         Toast.makeText(this, getString(R.string.icon_changed, Settings.manufacturer.ifEmpty { getString(R.string.app_name) }), Toast.LENGTH_LONG).show()
     }
 
+    private val colorNames by lazy { resources.getStringArray(R.array.marker_color_names).toList() }
+
+    private fun markerIcon(shape: MarkerShape, color: Int) =
+        BitmapDrawable(resources, MarkerIcons.bitmap(this, shape, color))
+
     private fun refresh() {
+        b.markerShape.summary.setText(Settings.markerShape.label)
+        b.markerColor.summary.text = colorNames.getOrElse(MARKER_COLORS.indexOf(Settings.markerColor)) { "" }
+        for (row in listOf(b.markerShape, b.markerColor)) {
+            row.preview.setImageDrawable(markerIcon(Settings.markerShape, Settings.markerColor))
+            row.preview.visibility = android.view.View.VISIBLE
+        }
         b.manufacturer.summary.text = Settings.manufacturer.ifEmpty { getString(R.string.manufacturer_none) }
         b.theme.summary.setText(Settings.theme.label)
         val bike = Settings.bike

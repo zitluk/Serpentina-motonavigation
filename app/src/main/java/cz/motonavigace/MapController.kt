@@ -1,6 +1,7 @@
 package cz.motonavigace
 
 import android.content.Context
+import android.graphics.drawable.BitmapDrawable
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
@@ -15,7 +16,6 @@ import org.oscim.event.Gesture
 import org.oscim.event.GestureListener
 import org.oscim.event.MotionEvent
 import org.oscim.layers.Layer
-import org.oscim.layers.LocationLayer
 import org.oscim.layers.PathLayer
 import org.oscim.layers.marker.ItemizedLayer
 import org.oscim.layers.marker.MarkerInterface
@@ -69,7 +69,10 @@ class MapController(
     private val pinVia = symbol(R.drawable.ic_pin_via)
     private val pinEnd = symbol(R.drawable.ic_pin_end)
     private val pins = ItemizedLayer(map, pinEnd)
-    private val location = LocationLayer(map)
+    /** Poloha jezdce: zvolená ikona ležící na mapě, natočená po směru jízdy. */
+    private val location = ItemizedLayer(map, pinEnd)
+    private var locationItem: MarkerItem? = null
+    private var markerKey = ""
 
     var mode: MapViewMode = MapViewMode.PERSPECTIVE_3D
         private set
@@ -80,7 +83,6 @@ class MapController(
     init {
         map.viewport().setMinZoomLevel(4)
         map.viewport().setMaxZoomLevel(20)
-        location.isEnabled = false
 
         val layers = map.layers()
         layers.add(LongPressLayer(onLongPress))
@@ -235,9 +237,28 @@ class MapController(
 
     // ---------------------------------------------------------------- překryvy
 
-    fun setLocation(p: LatLong, accuracy: Float) {
-        location.isEnabled = true
-        location.setPosition(p.latitude, p.longitude, accuracy)
+    /** @param headingDeg směr jízdy od severu, null = neznámý (ikona míří na sever) */
+    fun setLocation(p: LatLong, headingDeg: Float?) {
+        val key = "${Settings.markerShape.id}/${Settings.markerColor}"
+        if (key != markerKey) {
+            markerKey = key
+            locationItem = null
+        }
+        val item = locationItem ?: MarkerItem("", "", GeoPoint(p.latitude, p.longitude)).also {
+            // Ne-billboard: ikona leží na mapě, otáčí se a ve 3D se naklání s ní
+            it.marker = MarkerSymbol(
+                AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
+                    MarkerIcons.bitmap(context, Settings.markerShape, Settings.markerColor, 40f))),
+                MarkerSymbol.HotspotPlace.CENTER, false,
+            )
+            location.removeAllItems()
+            location.addItem(it)
+            locationItem = it
+        }
+        item.geoPoint = GeoPoint(p.latitude, p.longitude)
+        // VTM otáčí ikonu ležící na mapě po směru hodinových ručiček, stejně jako kurz
+        headingDeg?.let { item.setRotation(it) }
+        location.populate()
         map.updateMap(true)
     }
 

@@ -16,6 +16,10 @@
         <include android:id="@+id/manufacturer" layout="@layout/item_setting" />
         <include android:id="@+id/bike" layout="@layout/item_setting" />
 
+        <TextView style="@style/SettingsHeader" android:text="@string/settings_marker" />
+        <include android:id="@+id/markerShape" layout="@layout/item_setting" />
+        <include android:id="@+id/markerColor" layout="@layout/item_setting" />
+
         <TextView style="@style/SettingsHeader" android:text="@string/settings_language" />
         <include android:id="@+id/language" layout="@layout/item_setting" />
 

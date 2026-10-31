@@ -65,6 +65,14 @@ object Settings {
         get() = BikeType.entries.firstOrNull { it.id == prefs.getInt("bike", BikeType.TOURING.id) } ?: BikeType.TOURING
         set(value) = prefs.edit { putInt("bike", value.id) }
 
+    var markerShape: MarkerShape
+        get() = MarkerShape.byId(prefs.getInt("marker_shape", MarkerShape.ARROW.id))
+        set(value) = prefs.edit { putInt("marker_shape", value.id) }
+
+    var markerColor: Int
+        get() = prefs.getInt("marker_color", MARKER_COLORS[0])
+        set(value) = prefs.edit { putInt("marker_color", value) }
+
     /** Výrobce motocyklu, prázdný = nevybráno. */
     var manufacturer: String
         get() = prefs.getString("manufacturer", "").orEmpty()
