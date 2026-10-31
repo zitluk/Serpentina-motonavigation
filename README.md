@@ -2,7 +2,7 @@
 
 Pod ikonou v telefonu se aplikace jmenuje **Serpentina** (plný název by launcher zkrátil). Interní identifikátor balíčku zůstává `cz.motonavigace`.
 
-Offline motonavigace pro Android inspirovaná aplikací [Cruiser](https://github.com/devemux86/cruiser).
+Offline motonavigace pro Android 
 
 ## Stažení do telefonu
 
