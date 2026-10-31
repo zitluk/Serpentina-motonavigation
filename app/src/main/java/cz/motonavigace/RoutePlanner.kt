@@ -137,6 +137,8 @@ object RoutePlanner {
             val track = engine.foundTrack ?: throw RoutingException(R.string.error_no_route)
 
             val n = track.nodes.size
+            // Trasa z jediného bodu (start = cíl) nemá délku a navigace by na ní spadla
+            if (n < 2) throw RoutingException(R.string.error_no_route)
             val pts = ArrayList<LatLong>(n)
             val dist = DoubleArray(n)
             val time = DoubleArray(n)

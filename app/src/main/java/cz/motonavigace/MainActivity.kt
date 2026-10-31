@@ -491,7 +491,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             chip.addOnCheckedChangeListener { _, _ -> onOptionsChanged() }
         }
         b.btnClear.setOnClickListener { clearRoute() }
-        b.btnNewLoop.setOnClickListener { roundTripKm?.let(::generateRoundTrip) }
+        b.btnNewLoop.setOnClickListener { roundTripKm?.let { generateRoundTrip(it) } }
         b.btnReverse.setOnClickListener {
             val s = start
             start = end
@@ -638,6 +638,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
             )
             return
         }
+        val km = roundTripKm
+        if (km != null && vias.isEmpty() && s == e) {
+            // Změna voleb zrušila ještě nedokončené hledání okruhu; bez průjezdních bodů by vyšla trasa start = cíl
+            generateRoundTrip(km, from = s)
+            return
+        }
 
         b.routeProgress.visibility = View.VISIBLE
         b.routeStatus.setText(R.string.calculating)
@@ -750,9 +756,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
             .show()
     }
 
-    /** Vygeneruje okruh dané délky z aktuální polohy (bez GPS ze středu mapy). */
-    private fun generateRoundTrip(km: Int) {
-        val from = lastLocation?.let { LatLong(it.latitude, it.longitude) } ?: run {
+    /** Vygeneruje okruh dané délky z [from], jinak z aktuální polohy (bez GPS ze středu mapy). */
+    private fun generateRoundTrip(km: Int, from: LatLong? = null) {
+        val from = from ?: lastLocation?.let { LatLong(it.latitude, it.longitude) } ?: run {
             Toast.makeText(this, R.string.round_trip_from_map_center, Toast.LENGTH_LONG).show()
             mapCtl.center
         }
