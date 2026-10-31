@@ -16,9 +16,22 @@ android {
         versionName = "0.1.0"
     }
 
+    // Klíč pro vydání je jen na počítači vývojáře (~/.gradle/gradle.properties), v repozitáři není;
+    // bez něj se vydání sestaví nepodepsané
+    val storeFilePath = providers.gradleProperty("serpentinaStoreFile").orNull
+    signingConfigs {
+        if (storeFilePath != null) create("release") {
+            storeFile = file(storeFilePath)
+            storePassword = providers.gradleProperty("serpentinaStorePassword").get()
+            keyAlias = providers.gradleProperty("serpentinaKeyAlias").get()
+            keyPassword = providers.gradleProperty("serpentinaKeyPassword").get()
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {
