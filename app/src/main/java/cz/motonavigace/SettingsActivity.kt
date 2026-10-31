@@ -37,14 +37,15 @@ class SettingsActivity : AppCompatActivity() {
         b.bike.root.setOnClickListener {
             choose(R.string.settings_bike_type, BikeType.entries.map { getString(it.label) }, Settings.bike.ordinal) {
                 Settings.bike = BikeType.entries[it]
-                changeIcon()
                 refresh()
             }
         }
         b.manufacturer.root.setOnClickListener {
-            val current = Settings.MANUFACTURERS.indexOf(Settings.manufacturer)
-            choose(R.string.settings_manufacturer, Settings.MANUFACTURERS, current) {
-                Settings.manufacturer = Settings.MANUFACTURERS[it]
+            // První položka vrací výchozí ikonu Serpentiny
+            val names = listOf("") + Settings.MANUFACTURERS.map { it.name }
+            val labels = listOf(getString(R.string.manufacturer_none)) + names.drop(1)
+            choose(R.string.settings_manufacturer, labels, names.indexOf(Settings.manufacturer)) {
+                Settings.manufacturer = names[it]
                 changeIcon()
                 refresh()
             }
@@ -65,7 +66,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun changeIcon() {
         Settings.applyLauncherIcon(this)
-        Toast.makeText(this, getString(R.string.icon_changed, getString(Settings.bike.label)), Toast.LENGTH_LONG).show()
+        Toast.makeText(this, getString(R.string.icon_changed, Settings.manufacturer.ifEmpty { getString(R.string.app_name) }), Toast.LENGTH_LONG).show()
     }
 
     private fun refresh() {

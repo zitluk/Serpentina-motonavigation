@@ -15,7 +15,7 @@ Offline motonavigace pro Android inspirovaná aplikací [Cruiser](https://github
 - **Náklon motorky:** menu → Náklon motorky – ukazatel náklonu, max. náklon vlevo/vpravo, rychlost a max. rychlost, zrychlení, max. zrychlení a brzdění (v g). Za jízdy se náklon počítá z gyroskopu a rychlosti GPS (sin φ = v·ω/g), při stání z polohy telefonu; maxima se ukládají a dají se vynulovat
 - **GPX:** import (menu, obrazovka Trasy a jízdy, nebo otevření .gpx z jiné aplikace), zobrazení, navigace po stopě, sdílení
 - **Ovládání v rukavicích:** tlačítka na mapě 64 dp, přiblížení tlačítky +/− (i během navigace), menu a volby jako velké položky přes celou šířku, tlačítka v celé aplikaci vysoká 64 dp, volby trasy 48 dp
-- **Nastavení:** vzhled (podle systému / světlý / tmavý), výrobce a typ motocyklu (typ přednastaví typ trasy, šotolinu, dálnice a strop rychlosti pro odhad času a změní ikonu aplikace na siluetu daného typu přes activity-alias; loga výrobců se kvůli ochranným známkám nepoužívají), jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), O aplikaci s licencemi
+- **Nastavení:** vzhled (podle systému / světlý / tmavý), výrobce a typ motocyklu (výrobce změní ikonu aplikace, typ přednastaví typ trasy, šotolinu, dálnice a strop rychlosti pro odhad času), jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), O aplikaci s licencemi
 - **Data:** stahují se v aplikaci (Stažení map) do úložiště aplikace – mapa a POI z download.mapsforge.org, routovací dlaždice 5×5° z brouter.de. U stažené mapy se ukazuje verze (datum dat) a při novější verzi na serveru tlačítko Aktualizovat
 
 ## Ovládání
@@ -63,3 +63,16 @@ Testy (statistiky jízdy):
 - Zatím bez stínování reliéfu a oblíbených míst.
 - Náklon předpokládá telefon na řídítkách na výšku a vyrovnaný kalibrací; ověřeno jen v emulátoru simulovanými senzory, ne na skutečné jízdě
 - Tmavý vzhled mění obrazovky aplikace, mapa zůstává světlá (VTM 0.25 nemá tmavou variantu stylu MOTORIDER)
+
+## Ikona aplikace podle výrobce
+
+Výběr výrobce v Nastavení přepne ikonu aplikace (Android to umí jen přes `activity-alias` v manifestu, zapnutý je vždy jeden – `Settings.applyLauncherIcon`). V repozitáři jsou **zástupné ikony s názvem značky** (písmo Roboto, Apache 2.0), ne loga – loga výrobců jsou ochranné známky a jejich použití, hlavně při zveřejnění aplikace, je na tobě.
+
+Vlastní logo pro značku (např. Honda):
+
+1. Smaž `app/src/main/res/drawable/ic_brand_honda.xml`.
+2. Vlož `app/src/main/res/drawable-nodpi/ic_brand_honda.png` – čtverec 432 × 432 px, průhledné pozadí, logo uprostřed v kruhu o průměru ~260 px (zbytek launcher ořízne).
+3. Pozadí ikony je barva `brand_icon_bg` v `res/values/colors.xml`.
+4. Znovu sestav aplikaci.
+
+Zástupné ikony se generují skriptem `tools/brand_icons.py` (potřebuje `fonttools` a Roboto-Regular.ttf, např. z `/system/fonts` v emulátoru).

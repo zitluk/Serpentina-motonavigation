@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zástupná ikona výrobce: jen název značky písmem Roboto (Apache 2.0), ne logo.
+     Vlastní logo: smaž tento soubor a vlož res/drawable-nodpi/ic_brand_jawa.png (viz README). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF" android:pathData="M30.82 57.24V45.28H34.90V57.24Q34.90 58.99 34.21 60.27Q33.52 61.55 32.34 62.25Q31.16 62.95 29.70 62.95Q28.21 62.95 27.03 62.36Q25.85 61.77 25.18 60.55Q24.51 59.33 24.51 57.44H28.61Q28.61 58.33 28.74 58.82Q28.87 59.32 29.10 59.52Q29.34 59.71 29.70 59.71Q30.09 59.71 30.33 59.42Q30.56 59.13 30.69 58.57Q30.82 58.02 30.82 57.24ZM43.86 48.95 40.62 62.71H36.21L41.59 45.28H44.34ZM46.40 62.71 43.15 48.95 42.61 45.28H45.42L50.80 62.71ZM46.53 56.21V59.45H38.98V56.21ZM55.47 61.13 58.27 45.28H60.23L61.50 46.64L58.49 62.71H56.30ZM55.37 45.28 57.73 61.25 56.80 62.71H54.26L51.31 45.28ZM62.34 61.16 64.68 45.28H68.71L65.77 62.71H63.25ZM61.73 45.28 64.62 61.22 63.72 62.71H61.53L58.45 46.61L59.77 45.28ZM76.92 48.95 73.68 62.71H69.28L74.65 45.28H77.40ZM79.46 62.71 76.22 48.95 75.68 45.28H78.48L83.86 62.71ZM79.59 56.21V59.45H72.04V56.21Z" />
+</vector>

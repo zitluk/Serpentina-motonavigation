@@ -138,5 +138,5 @@
     <string name="zoom_out">Oddálit</string>
     <string name="settings_manufacturer">Výrobce</string>
     <string name="manufacturer_none">Nevybráno</string>
-    <string name="icon_changed">Ikona aplikace je teď silueta: %1$s. Na ploše se může projevit až za chvíli.</string>
+    <string name="icon_changed">Ikona aplikace je teď %1$s. Na ploše se může projevit až za chvíli.</string>
 </resources>

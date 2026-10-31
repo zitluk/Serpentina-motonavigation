@@ -34,7 +34,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Ikona v launcheru: výchozí logo, nebo silueta typu motocyklu z Nastavení.
+        <!-- Ikona v launcheru: výchozí logo, nebo ikona výrobce zvoleného v Nastavení.
              Zapnutý je vždy jen jeden alias (Settings.applyLauncherIcon). -->
         <activity-alias
             android:name=".LauncherDefault"
@@ -49,10 +49,10 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".LauncherSport"
+            android:name=".LauncherBrandAprilia"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_sport"
+            android:icon="@mipmap/ic_launcher_aprilia"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -61,10 +61,10 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".LauncherTouring"
+            android:name=".LauncherBrandBenelli"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_touring"
+            android:icon="@mipmap/ic_launcher_benelli"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -73,10 +73,10 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".LauncherNaked"
+            android:name=".LauncherBrandBmw"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_naked"
+            android:icon="@mipmap/ic_launcher_bmw"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -85,10 +85,10 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".LauncherAdventure"
+            android:name=".LauncherBrandCfmoto"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_adventure"
+            android:icon="@mipmap/ic_launcher_cfmoto"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -97,10 +97,10 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".LauncherCruiser"
+            android:name=".LauncherBrandDucati"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_cruiser"
+            android:icon="@mipmap/ic_launcher_ducati"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -109,10 +109,178 @@
         </activity-alias>
 
         <activity-alias
-            android:name=".LauncherScooter"
+            android:name=".LauncherBrandHarleyDavidson"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_scooter"
+            android:icon="@mipmap/ic_launcher_harley_davidson"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandHonda"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_honda"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandHusqvarna"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_husqvarna"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandIndian"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_indian"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandJawa"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_jawa"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandKawasaki"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_kawasaki"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandKtm"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_ktm"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandMotoGuzzi"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_moto_guzzi"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandMvAgusta"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_mv_agusta"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandPiaggio"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_piaggio"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandRoyalEnfield"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_royal_enfield"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandSuzuki"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_suzuki"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandTriumph"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_triumph"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandVespa"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_vespa"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherBrandYamaha"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_yamaha"
             android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -33,16 +33,16 @@ enum class BikeType(
     val avoidMotorways: Boolean,
     val avoidUnpaved: Boolean,
     val maxKmh: Double,
-    /** activity-alias v manifestu s ikonou siluety tohoto typu */
-    val launcherAlias: String,
 ) {
-    SPORT(0, R.string.bike_sport, R.string.bike_sport_desc, RouteType.CURVY, false, true, 130.0, ".LauncherSport"),
-    TOURING(1, R.string.bike_touring, R.string.bike_touring_desc, RouteType.FASTEST, false, true, 130.0, ".LauncherTouring"),
-    NAKED(2, R.string.bike_naked, R.string.bike_naked_desc, RouteType.CURVY, false, true, 120.0, ".LauncherNaked"),
-    ADVENTURE(3, R.string.bike_adventure, R.string.bike_adventure_desc, RouteType.CURVY, false, false, 120.0, ".LauncherAdventure"),
-    CRUISER(4, R.string.bike_cruiser, R.string.bike_cruiser_desc, RouteType.ECO, false, true, 110.0, ".LauncherCruiser"),
-    SCOOTER(5, R.string.bike_scooter, R.string.bike_scooter_desc, RouteType.SHORTEST, true, true, 90.0, ".LauncherScooter"),
+    SPORT(0, R.string.bike_sport, R.string.bike_sport_desc, RouteType.CURVY, false, true, 130.0),
+    TOURING(1, R.string.bike_touring, R.string.bike_touring_desc, RouteType.FASTEST, false, true, 130.0),
+    NAKED(2, R.string.bike_naked, R.string.bike_naked_desc, RouteType.CURVY, false, true, 120.0),
+    ADVENTURE(3, R.string.bike_adventure, R.string.bike_adventure_desc, RouteType.CURVY, false, false, 120.0),
+    CRUISER(4, R.string.bike_cruiser, R.string.bike_cruiser_desc, RouteType.ECO, false, true, 110.0),
+    SCOOTER(5, R.string.bike_scooter, R.string.bike_scooter_desc, RouteType.SHORTEST, true, true, 90.0),
 }
+
+class Manufacturer(val name: String, val launcherAlias: String)
 
 /** Uživatelské nastavení aplikace. */
 object Settings {
@@ -69,26 +69,50 @@ object Settings {
         get() = prefs.getString("manufacturer", "").orEmpty()
         set(value) = prefs.edit { putString("manufacturer", value) }
 
-    /** Jen názvy – loga výrobců jsou ochranné známky, ikona ukazuje siluetu typu motocyklu. */
+    /**
+     * Výrobci a jejich ikona (activity-alias v manifestu). Ikony jsou zástupné – název značky,
+     * ne logo; oficiální logo si lze vložit podle README.
+     */
     val MANUFACTURERS = listOf(
-        "Aprilia", "Benelli", "BMW", "CFMOTO", "Ducati", "Harley-Davidson", "Honda", "Husqvarna",
-        "Indian", "Jawa", "Kawasaki", "KTM", "Moto Guzzi", "MV Agusta", "Piaggio", "Royal Enfield",
-        "Suzuki", "Triumph", "Vespa", "Yamaha",
+        Manufacturer("Aprilia", ".LauncherBrandAprilia"),
+        Manufacturer("Benelli", ".LauncherBrandBenelli"),
+        Manufacturer("BMW", ".LauncherBrandBmw"),
+        Manufacturer("CFMOTO", ".LauncherBrandCfmoto"),
+        Manufacturer("Ducati", ".LauncherBrandDucati"),
+        Manufacturer("Harley-Davidson", ".LauncherBrandHarleyDavidson"),
+        Manufacturer("Honda", ".LauncherBrandHonda"),
+        Manufacturer("Husqvarna", ".LauncherBrandHusqvarna"),
+        Manufacturer("Indian", ".LauncherBrandIndian"),
+        Manufacturer("Jawa", ".LauncherBrandJawa"),
+        Manufacturer("Kawasaki", ".LauncherBrandKawasaki"),
+        Manufacturer("KTM", ".LauncherBrandKtm"),
+        Manufacturer("Moto Guzzi", ".LauncherBrandMotoGuzzi"),
+        Manufacturer("MV Agusta", ".LauncherBrandMvAgusta"),
+        Manufacturer("Piaggio", ".LauncherBrandPiaggio"),
+        Manufacturer("Royal Enfield", ".LauncherBrandRoyalEnfield"),
+        Manufacturer("Suzuki", ".LauncherBrandSuzuki"),
+        Manufacturer("Triumph", ".LauncherBrandTriumph"),
+        Manufacturer("Vespa", ".LauncherBrandVespa"),
+        Manufacturer("Yamaha", ".LauncherBrandYamaha"),
     )
 
     private const val DEFAULT_ALIAS = ".LauncherDefault"
 
     /**
-     * Ikona aplikace podle typu motocyklu. Android neumí ikonu změnit přímo, přepínáme
+     * Ikona aplikace podle výrobce. Android neumí ikonu změnit přímo, přepínáme
      * proto mezi activity-alias v manifestu – zapnutý je vždy právě jeden.
      */
     fun applyLauncherIcon(context: Context) {
         val pm = context.packageManager
-        val wanted = bike.launcherAlias
-        for (alias in BikeType.entries.map { it.launcherAlias } + DEFAULT_ALIAS) {
+        val wanted = MANUFACTURERS.firstOrNull { it.name == manufacturer }?.launcherAlias ?: DEFAULT_ALIAS
+        for (alias in MANUFACTURERS.map { it.launcherAlias } + DEFAULT_ALIAS) {
             val state = if (alias == wanted) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                 else PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            pm.setComponentEnabledSetting(ComponentName(context, context.packageName + alias), state, PackageManager.DONT_KILL_APP)
+            val component = ComponentName(context, context.packageName + alias)
+            // Měníme jen rozdíly – každá změna nutí launcher znovu načíst ikony
+            if (pm.getComponentEnabledSetting(component) != state) {
+                pm.setComponentEnabledSetting(component, state, PackageManager.DONT_KILL_APP)
+            }
         }
     }
 

@@ -1,3 +1,5 @@
 <resources>
     <color name="launcher_bg">#E53935</color>
+    <!-- Pozadí ikony výrobce -->
+    <color name="brand_icon_bg">#212121</color>
 </resources>
