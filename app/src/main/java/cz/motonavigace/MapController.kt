@@ -239,27 +239,39 @@ class MapController(
 
     // ---------------------------------------------------------------- překryvy
 
+    /** Jezdec jde pěšky (navigace k motorce) – místo motorky se ukazuje chodec. */
+    var walking = false
+
     /** @param headingDeg směr jízdy od severu, null = neznámý (ikona míří na sever) */
     fun setLocation(p: LatLong, headingDeg: Float?) {
-        val key = "${Settings.markerShape.id}/${Settings.markerColor}"
+        val key = "${Settings.markerShape.id}/${Settings.markerColor}/$walking"
         if (key != markerKey) {
             markerKey = key
             locationItem = null
         }
         val item = locationItem ?: MarkerItem("", "", GeoPoint(p.latitude, p.longitude)).also {
-            // Ne-billboard: ikona leží na mapě, otáčí se a ve 3D se naklání s ní
-            it.marker = MarkerSymbol(
-                AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
-                    MarkerIcons.bitmap(context, Settings.markerShape, Settings.markerColor, 40f))),
-                MarkerSymbol.HotspotPlace.CENTER, false,
-            )
+            it.marker = if (walking) {
+                // Chodec je kreslený z boku: stojí na místě nohama a neotáčí se
+                MarkerSymbol(
+                    AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
+                        MarkerIcons.pedestrian(context, Settings.markerColor, 40f))),
+                    MarkerSymbol.HotspotPlace.BOTTOM_CENTER, true,
+                )
+            } else {
+                // Ne-billboard: ikona leží na mapě, otáčí se a ve 3D se naklání s ní
+                MarkerSymbol(
+                    AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
+                        MarkerIcons.bitmap(context, Settings.markerShape, Settings.markerColor, 40f))),
+                    MarkerSymbol.HotspotPlace.CENTER, false,
+                )
+            }
             location.removeAllItems()
             location.addItem(it)
             locationItem = it
         }
         item.geoPoint = GeoPoint(p.latitude, p.longitude)
         // VTM otáčí ikonu ležící na mapě po směru hodinových ručiček, stejně jako kurz
-        headingDeg?.let { item.setRotation(it) }
+        if (!walking) headingDeg?.let { item.setRotation(it) }
         location.populate()
         map.updateMap(true)
     }

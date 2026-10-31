@@ -11,6 +11,7 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.view.Gravity
 import android.view.View
@@ -38,6 +39,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlin.math.roundToInt
 import cz.motonavigace.databinding.ActivityMainBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -54,6 +56,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private var lastLocation: Location? = null
     private var followOnFirstFix = true
+    /** Při spuštění aplikace se po první nové poloze zeptáme, zda navigovat k zaparkované motorce. */
+    private var askForBike = false
+    /** Okamžik spuštění – poslední známá poloha z doby před ním může být ještě u motorky. */
+    private val launchedAtNanos = SystemClock.elapsedRealtimeNanos()
 
     // Body trasy
     private var start: LatLong? = null
@@ -179,6 +185,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         RecordingService.recoverUnfinished()?.let { TrackLibrary.lastRecorded = it }
 
+        askForBike = savedInstanceState == null && bikePosition() != null
         requestLocation()
         if (savedInstanceState != null) restoreWaypoints(savedInstanceState)
         handleIntent(intent)
@@ -464,6 +471,52 @@ class MainActivity : AppCompatActivity(), LocationListener {
             followOnFirstFix = false
             mapCtl.moveTo(pos, zoom = if (mapCtl.zoomLevel < 12) 14 else null)
         }
+        // Rozhodujeme až podle dost přesné polohy změřené po spuštění
+        if (askForBike && location.elapsedRealtimeNanos >= launchedAtNanos && location.accuracy <= BIKE_FIX_ACCURACY) {
+            askForBike = false
+            offerNavigationToBike(location, pos)
+        }
+    }
+
+    // ---------------------------------------------------------------- zaparkovaná motorka
+
+    private fun bikePosition(): LatLong? {
+        if (!prefs.contains("bike_lat")) return null
+        return LatLong(
+            java.lang.Double.longBitsToDouble(prefs.getLong("bike_lat", 0)),
+            java.lang.Double.longBitsToDouble(prefs.getLong("bike_lon", 0)),
+        )
+    }
+
+    /** Po ukončení navigace si pamatujeme, kde motorka zůstala. */
+    private fun saveBikePosition() {
+        val loc = lastLocation ?: return
+        prefs.edit {
+            putLong("bike_lat", java.lang.Double.doubleToRawLongBits(loc.latitude))
+            putLong("bike_lon", java.lang.Double.doubleToRawLongBits(loc.longitude))
+        }
+    }
+
+    /** Ikona chodce místo motorky; hned překreslí polohu na mapě. */
+    private fun setWalking(on: Boolean) {
+        if (mapCtl.walking == on) return
+        mapCtl.walking = on
+        lastLocation?.let { mapCtl.setLocation(LatLong(it.latitude, it.longitude), null) }
+    }
+
+    private fun offerNavigationToBike(location: Location, here: LatLong) {
+        val bike = bikePosition() ?: return
+        val distance = here.sphericalDistance(bike)
+        // U motorky, nebo když GPS ještě neví přesně, kde jsme, se neptáme
+        if (distance <= BIKE_NEAR_METERS || distance <= location.accuracy) return
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.bike_title)
+            .setMessage(getString(R.string.bike_message, formatDistance(distance)))
+            .setNegativeButton(R.string.bike_no, null)
+            .setPositiveButton(R.string.bike_navigate) { _, _ ->
+                onDestinationChosen(getString(R.string.bike_destination), bike, thenNavigate = true)
+            }
+            .show()
     }
 
     @Deprecated("Deprecated in Java")
@@ -558,7 +611,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         calculateRoute()
     }
 
-    private fun onDestinationChosen(name: String, position: LatLong) {
+    private fun onDestinationChosen(name: String, position: LatLong, thenNavigate: Boolean = false) {
         end = position
         destinationName = name
         vias.clear()
@@ -566,7 +619,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         roundTripKm = null
         // Trasa z aktuální polohy, pokud ji známe
         lastLocation?.let { start = LatLong(it.latitude, it.longitude) }
-        onWaypointsChanged(zoomWhenDone = true)
+        onWaypointsChanged(zoomWhenDone = !thenNavigate, onDone = { if (thenNavigate) startNavigation() })
     }
 
     private fun onMapLongPress(p: LatLong) = runOnUiThread {
@@ -609,13 +662,16 @@ class MainActivity : AppCompatActivity(), LocationListener {
         onWaypointsChanged()
     }
 
-    private fun onWaypointsChanged(zoomWhenDone: Boolean = false) {
+    private fun onWaypointsChanged(zoomWhenDone: Boolean = false, onDone: (Route) -> Unit = {}) {
         refreshPins()
         b.destinationName.text = destinationName
         b.destinationName.visibility = if (destinationName != null) View.VISIBLE else View.GONE
         b.btnNewLoop.visibility = if (roundTripKm != null) View.VISIBLE else View.GONE
         // Přiblížit tak, aby byly vidět všechny varianty trasy
-        calculateRoute(onDone = { if (zoomWhenDone) zoomToPoints(routes.flatMap(Route::points)) })
+        calculateRoute(onDone = {
+            if (zoomWhenDone) zoomToPoints(routes.flatMap(Route::points))
+            onDone(it)
+        })
     }
 
     private fun calculateRoute(onDone: (Route) -> Unit = {}) {
@@ -902,6 +958,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         val here = LatLong(loc.latitude, loc.longitude)
         setNavigationUi(true)
+        // K zaparkované motorce se jde pěšky
+        setWalking(end != null && end == bikePosition())
         // Během navigace jen vybraná trasa, šedé varianty by mátly
         mapCtl.showAlternatives(emptyList())
         mapCtl.startFollowing()
@@ -919,6 +977,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun stopNavigation() {
+        // Po navigaci pěšky k motorce neukládáme – chodec může skončit kdekoli cestou
+        if (!mapCtl.walking) saveBikePosition()
+        setWalking(false)
         navigator = null
         recalculating = false
         tts?.stop()
@@ -941,6 +1002,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             b.navInstruction.setText(R.string.calculating)
             b.navEta.text = ""
             b.navRemaining.text = ""
+            b.navSpeed.setText(R.string.speed_unknown)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
@@ -962,6 +1024,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val eta = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(System.currentTimeMillis() + state.remainingSeconds.toLong() * 1000))
         b.navEta.text = getString(R.string.nav_eta, eta)
         b.navRemaining.text = "${formatDistance(state.remainingMeters)} · ${formatDuration(state.remainingSeconds)}"
+        b.navSpeed.text = if (location.hasSpeed()) (location.speed * 3.6f).roundToInt().toString() else getString(R.string.speed_unknown)
 
         when {
             state.arrived -> {
@@ -1043,5 +1106,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private companion object {
         /** Odkud před manévrem ukazovat pruhy (m). */
         const val LANES_DISTANCE = 1500.0
+        /** Do této vzdálenosti od motorky se na navigaci k ní neptáme (m). */
+        const val BIKE_NEAR_METERS = 20.0
+        /** Nejhorší přesnost polohy (m), podle které se ještě rozhodujeme o dotazu na motorku. */
+        const val BIKE_FIX_ACCURACY = 30f
     }
 }

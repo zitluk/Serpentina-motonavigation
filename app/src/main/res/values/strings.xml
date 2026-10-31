@@ -2,6 +2,7 @@
     <string name="app_name" translatable="false">Serpentina</string>
     <!-- Plný název – pod ikonou by se nevešel, proto jen v O aplikaci a v obchodě -->
     <string name="app_full_name" translatable="false">Serpentina-motonavigation</string>
+    <string name="copyright" translatable="false">© 2026 Zitluk</string>
     <string name="offline_data">Stažení map</string>
     <string name="my_location">Moje poloha</string>
     <string name="no_maps">Zatím nemáš žádnou offline mapu.</string>
@@ -132,6 +133,13 @@
     <string name="language_english">English</string>
     <string name="settings_about">O aplikaci</string>
     <string name="about_version">Verze %1$s</string>
+    <string name="speed_unit">km/h</string>
+    <string name="speed_unknown">–</string>
+    <string name="bike_title">Navigovat k motorce?</string>
+    <string name="bike_message">Motorka zůstala zaparkovaná %1$s odsud.</string>
+    <string name="bike_destination">Motorka</string>
+    <string name="bike_navigate">Navigovat</string>
+    <string name="bike_no">Ne</string>
     <string name="quick_fuel">Čerpací stanice</string>
     <string name="quick_parking">Parkoviště</string>
     <string name="quick_food">Občerstvení</string>

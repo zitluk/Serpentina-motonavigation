@@ -130,6 +130,13 @@
     <string name="language_english">English</string>
     <string name="settings_about">About</string>
     <string name="about_version">Version %1$s</string>
+    <string name="speed_unit">km/h</string>
+    <string name="speed_unknown">–</string>
+    <string name="bike_title">Navigate to your motorcycle?</string>
+    <string name="bike_message">Your motorcycle is parked %1$s from here.</string>
+    <string name="bike_destination">Motorcycle</string>
+    <string name="bike_navigate">Navigate</string>
+    <string name="bike_no">No</string>
     <string name="quick_fuel">Fuel</string>
     <string name="quick_parking">Parking</string>
     <string name="quick_food">Food</string>

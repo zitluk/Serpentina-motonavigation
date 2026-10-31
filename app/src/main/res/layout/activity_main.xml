@@ -433,6 +433,31 @@
             android:orientation="horizontal"
             android:padding="12dp">
 
+            <!-- Rychlost podle GPS -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:gravity="center_horizontal"
+                android:minWidth="72dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/navSpeed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:includeFontPadding="false"
+                    android:text="@string/speed_unknown"
+                    android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/speed_unit"
+                    android:textAppearance="?attr/textAppearanceLabelLarge" />
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

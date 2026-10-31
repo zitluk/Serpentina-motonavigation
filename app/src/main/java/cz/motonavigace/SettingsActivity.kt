@@ -47,7 +47,7 @@ class SettingsActivity : AppCompatActivity() {
             })
         }
         b.about.title.text = getString(R.string.app_full_name)
-        b.about.summary.text = getString(R.string.about_version, versionName())
+        b.about.summary.text = getString(R.string.about_version, versionName()) + "\n" + getString(R.string.copyright)
         b.donate.title.setText(R.string.settings_donate)
         b.donate.summary.text = getString(R.string.donate_summary, getString(R.string.donate_account))
         // QR kód na vlastním displeji telefon nenaskenuje, proto jde účet i zkopírovat
@@ -124,7 +124,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun showAbout() {
         val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.app_full_name) + " " + versionName())
-            .setMessage(HtmlCompat.fromHtml(getString(R.string.about_text), HtmlCompat.FROM_HTML_MODE_COMPACT))
+            .setMessage(HtmlCompat.fromHtml(getString(R.string.about_text) + "<br><br>" + getString(R.string.copyright), HtmlCompat.FROM_HTML_MODE_COMPACT))
             .setPositiveButton(android.R.string.ok, null)
             .show()
         dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
