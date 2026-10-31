@@ -69,7 +69,7 @@
     <string name="view_3d">3D – po směru jízdy</string>
     <string name="view_2d">2D – po směru jízdy</string>
     <string name="view_north">Sever nahoře</string>
-    <string name="lean_title">Náklon motorky</string>
+    <string name="lean_title">Náklon motocyklu</string>
     <string name="lean_max_left">Max náklon vlevo</string>
     <string name="lean_max_right">Max náklon vpravo</string>
     <string name="lean_speed">Rychlost</string>
@@ -81,7 +81,7 @@
     <string name="lean_reset">Vynulovat</string>
     <string name="lean_reset_confirm">Vynulovat zaznamenaná maxima?</string>
     <string name="lean_calibrated">Současná poloha je teď 0°</string>
-    <string name="lean_hint">Telefon upevni na řídítka na výšku. Před jízdou postav motorku rovně a klepni na Kalibrovat. Maxima se zaznamenávají jen za jízdy (nad 11 km/h). Zrychlení je v násobcích g.</string>
+    <string name="lean_hint">Telefon upevni na řídítka na výšku. Před jízdou postav motocykl rovně a klepni na Kalibrovat. Maxima se zaznamenávají jen za jízdy (nad 11 km/h). Zrychlení je v násobcích g.</string>
     <string name="lean_no_gyro">Telefon nemá gyroskop – náklon v zatáčce bude jen přibližný.</string>
     <string name="downloading">Stahuje se %1$d/%2$d</string>
     <string name="partially_downloaded">Částečně staženo %1$d/%2$d</string>

@@ -12,7 +12,7 @@ Offline motonavigace pro Android inspirovaná aplikací [Cruiser](https://github
 - **Navigace:** pokyny z BRouteru, české hlasové hlášky (TextToSpeech), přepočet po sjetí z trasy, mapa otočená ve směru jízdy
 - **Projížďka po okolí:** okruh zvolené délky (20–300 km) z aktuální polohy, náhodný směr, tlačítko „Jiný okruh“
 - **Záznam jízdy:** služba na popředí (běží i se zhasnutou obrazovkou), ukládá GPX se statistikami (vzdálenost, čas, Ø a max. rychlost, stoupání)
-- **Náklon motorky:** menu → Náklon motorky – ukazatel náklonu, max. náklon vlevo/vpravo, rychlost a max. rychlost, zrychlení, max. zrychlení a brzdění (v g). Za jízdy se náklon počítá z gyroskopu a rychlosti GPS (sin φ = v·ω/g), při stání z polohy telefonu; maxima se ukládají a dají se vynulovat
+- **Náklon motocyklu:** menu → Náklon motocyklu – ukazatel náklonu, max. náklon vlevo/vpravo, rychlost a max. rychlost, zrychlení, max. zrychlení a brzdění (v g). Za jízdy se náklon počítá z gyroskopu a rychlosti GPS (sin φ = v·ω/g), při stání z polohy telefonu; maxima se ukládají a dají se vynulovat
 - **GPX:** import (menu, obrazovka Trasy a jízdy, nebo otevření .gpx z jiné aplikace), zobrazení, navigace po stopě, sdílení
 - **Ovládání v rukavicích:** tlačítka na mapě 64 dp, přiblížení tlačítky +/− (i během navigace), menu a volby jako velké položky přes celou šířku, tlačítka v celé aplikaci vysoká 64 dp, volby trasy 48 dp
 - **Nastavení:** vzhled (podle systému / světlý / tmavý), výrobce a typ motocyklu (výrobce změní ikonu aplikace, typ přednastaví typ trasy, šotolinu, dálnice a strop rychlosti pro odhad času), jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), O aplikaci s licencemi
