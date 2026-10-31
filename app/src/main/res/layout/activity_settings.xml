@@ -25,6 +25,7 @@
 
         <TextView style="@style/SettingsHeader" android:text="@string/settings_about" />
         <include android:id="@+id/about" layout="@layout/item_setting" />
+        <include android:id="@+id/feedback" layout="@layout/item_setting" />
         <include android:id="@+id/donate" layout="@layout/item_setting" />
 
         <!-- QR Platba na účet vývojáře; bílý podklad je součástí obrázku, takže jde naskenovat i v tmavém režimu -->

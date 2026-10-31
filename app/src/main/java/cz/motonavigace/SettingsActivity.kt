@@ -6,15 +6,21 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
+import android.util.Patterns
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
 import androidx.core.text.HtmlCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cz.motonavigace.databinding.ActivitySettingsBinding
+import cz.motonavigace.databinding.DialogFeedbackBinding
+import kotlinx.coroutines.launch
 
-/** Nastavení: vzhled, typ motocyklu, jazyk, informace o aplikaci a příspěvek na vývoj. */
+/** Nastavení: vzhled, typ motocyklu, jazyk, informace o aplikaci, zpětná vazba a příspěvek na vývoj. */
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var b: ActivitySettingsBinding
@@ -48,6 +54,9 @@ class SettingsActivity : AppCompatActivity() {
         }
         b.about.title.text = getString(R.string.app_full_name)
         b.about.summary.text = getString(R.string.about_version, versionName()) + "\n" + getString(R.string.copyright)
+        b.feedback.title.setText(R.string.feedback_title)
+        b.feedback.summary.setText(R.string.feedback_summary)
+        b.feedback.root.setOnClickListener { showFeedback() }
         b.donate.title.setText(R.string.settings_donate)
         b.donate.summary.text = getString(R.string.donate_summary, getString(R.string.donate_account))
         // QR kód na vlastním displeji telefon nenaskenuje, proto jde účet i zkopírovat
@@ -128,6 +137,45 @@ class SettingsActivity : AppCompatActivity() {
             .setPositiveButton(android.R.string.ok, null)
             .show()
         dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
+    }
+
+    private fun showFeedback() {
+        val v = DialogFeedbackBinding.inflate(layoutInflater)
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.feedback_title)
+            .setView(v.root)
+            .setNegativeButton(R.string.cancel, null)
+            // Tlačítko obsloužíme sami, ať se okno při chybě nezavře a text nezmizí
+            .setPositiveButton(R.string.feedback_send, null)
+            .create()
+        dialog.setOnShowListener {
+            val send = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            send.setOnClickListener {
+                val message = v.message.text?.toString()?.trim().orEmpty()
+                val contact = v.contact.text?.toString()?.trim().orEmpty()
+                v.messageLayout.error = if (message.isEmpty()) getString(R.string.feedback_empty) else null
+                v.contactLayout.error =
+                    if (contact.isNotEmpty() && !Patterns.EMAIL_ADDRESS.matcher(contact).matches()) getString(R.string.feedback_bad_email) else null
+                if (v.messageLayout.error != null || v.contactLayout.error != null) return@setOnClickListener
+
+                send.isEnabled = false
+                v.progress.visibility = View.VISIBLE
+                lifecycleScope.launch {
+                    Feedback.send(message, contact)
+                        .onSuccess {
+                            dialog.dismiss()
+                            Toast.makeText(this@SettingsActivity, R.string.feedback_sent, Toast.LENGTH_LONG).show()
+                        }
+                        .onFailure {
+                            send.isEnabled = true
+                            v.progress.visibility = View.INVISIBLE
+                            Toast.makeText(this@SettingsActivity, getString(R.string.feedback_failed, it.message.orEmpty()), Toast.LENGTH_LONG).show()
+                        }
+                }
+            }
+        }
+        dialog.show()
+        v.message.requestFocus()
     }
 
     private fun copyDonateAccount() {

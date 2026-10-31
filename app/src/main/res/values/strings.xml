@@ -145,6 +145,16 @@
     <string name="quick_food">Občerstvení</string>
     <string name="quick_nothing">Do %1$d km nic nenalezeno.</string>
     <string name="quick_from_map">Vzdálenost od středu mapy – poloha zatím není známá.</string>
+    <string name="feedback_title">Zpětná vazba pro vývojáře</string>
+    <string name="feedback_summary">Napište, co nefunguje nebo co vylepšit</string>
+    <string name="feedback_message_hint">Vaše zpráva</string>
+    <string name="feedback_contact_hint">Váš e-mail pro odpověď (nepovinné)</string>
+    <string name="feedback_note">Spolu se zprávou se odešle verze aplikace, verze Androidu a model telefonu. Poloha ani trasy se neposílají.</string>
+    <string name="feedback_send">Odeslat</string>
+    <string name="feedback_empty">Napište prosím zprávu</string>
+    <string name="feedback_bad_email">Tohle nevypadá jako e-mail</string>
+    <string name="feedback_sent">Děkuji, zpráva odešla</string>
+    <string name="feedback_failed">Zprávu se nepodařilo odeslat: %1$s. Zkontrolujte připojení k internetu.</string>
     <string name="settings_donate">Přispět na vývoj</string>
     <string name="donate_account">1647587003/5500</string>
     <string name="donate_summary">Účet %1$s, zpráva pro příjemce: Serpentina. Naskenujte QR kód v bankovní aplikaci, nebo ťuknutím zkopírujte číslo účtu. Děkuji!</string>

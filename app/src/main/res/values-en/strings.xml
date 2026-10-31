@@ -142,6 +142,16 @@
     <string name="quick_food">Food</string>
     <string name="quick_nothing">Nothing found within %1$d km.</string>
     <string name="quick_from_map">Distance from the map centre – your location is not known yet.</string>
+    <string name="feedback_title">Feedback for the developer</string>
+    <string name="feedback_summary">Tell us what doesn\'t work or what to improve</string>
+    <string name="feedback_message_hint">Your message</string>
+    <string name="feedback_contact_hint">Your e-mail for a reply (optional)</string>
+    <string name="feedback_note">The app version, Android version and phone model are sent with your message. Your location and routes are not sent.</string>
+    <string name="feedback_send">Send</string>
+    <string name="feedback_empty">Please write a message</string>
+    <string name="feedback_bad_email">This doesn\'t look like an e-mail address</string>
+    <string name="feedback_sent">Thank you, your message has been sent</string>
+    <string name="feedback_failed">The message could not be sent: %1$s. Please check your internet connection.</string>
     <string name="settings_donate">Support development</string>
     <string name="donate_account">CZ71 5500 0000 0016 4758 7003</string>
     <string name="donate_summary">IBAN %1$s, payment reference: Serpentina. Scan the QR code in your banking app or tap to copy the IBAN. Thank you!</string>
