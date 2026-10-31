@@ -33,7 +33,9 @@ Offline motonavigace pro Android inspirovaná aplikací [Cruiser](https://github
 - Během navigace: další manévr nahoře, příjezd a zbývající km dole, **Ukončit** (nebo tlačítko Zpět)
 
 ## Sestavení
-Výstupy buildu jsou mimo OneDrive (`~/Library/Caches/Motonavigace`), protože synchronizace kolidovala s Gradle cache.
+Výstupy buildu jsou mimo OneDrive (`~/Library/Caches/Motonavigace`, na Windows `%USERPROFILE%\Library\Caches\Motonavigace`), protože synchronizace kolidovala s Gradle cache.
+
+### macOS
 
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@17
@@ -53,6 +55,65 @@ Testy (statistiky jízdy):
 ```bash
 ./gradlew --project-cache-dir ~/Library/Caches/Motonavigace/gradle testDebugUnitTest
 ```
+
+### Windows
+
+Nástroje (bez instalátorů, stačí rozbalit):
+
+| | Kam | Odkud |
+|---|---|---|
+| JDK 17 (Temurin) | `%LOCALAPPDATA%\Programs\Java\jdk-17…` | zip z adoptium.net |
+| Android SDK | `%USERPROFILE%\Android\Sdk` | `commandlinetools-win-*.zip` do `Sdk\cmdline-tools\latest`, pak `android sdk install platform-tools platforms/android-37.0 build-tools/37.0.0` |
+
+Uživatelské proměnné prostředí: `JAVA_HOME` na JDK, `ANDROID_HOME` na SDK, do `Path` přidat `%JAVA_HOME%\bin` a `%ANDROID_HOME%\platform-tools`.
+
+> SDK nedávej do nové složky v `%LOCALAPPDATA%`, pokud ho instaluje Claude desktop. Aplikace ji přesměruje do svého sandboxu (`AppData\Local\Packages\AnthropicPBC.Claude_…`) a Průzkumník, cmd ani Android Studio ji pak nevidí.
+
+`local.properties` se přes OneDrive sdílí s Macem a `sdk.dir` je na každém počítači jiné. Po přechodu na jiný počítač ho přepiš:
+
+```properties
+sdk.dir=C\:\\Users\\<uživatel>\\Android\\Sdk
+```
+
+Git hlásí všechny soubory jako změněné kvůli příznaku spustitelnosti z Macu. Jednou v repozitáři vypni sledování příznaku:
+
+```bash
+git config core.fileMode false
+```
+
+Build a testy (`gradlew.bat` v repozitáři není, spouští se přes Git Bash):
+
+```bash
+bash ./gradlew --project-cache-dir "$HOME/Library/Caches/Motonavigace/gradle" assembleDebug testDebugUnitTest
+```
+
+Instalace APK z PowerShellu:
+
+```powershell
+& "$env:ANDROID_HOME\platform-tools\adb.exe" install -r "$HOME\Library\Caches\Motonavigace\build\app\outputs\apk\debug\app-debug.apk"
+```
+
+#### Emulátor na Windows
+
+1. V BIOSu/UEFI zapnout **Intel Virtualization Technology (VT-x)**. Ověření: `(Get-CimInstance Win32_Processor).VirtualizationFirmwareEnabled` musí být `True`.
+2. Nainstalovat akceleraci AEHD: `android sdk install extras/google/Android_Emulator_Hypervisor_Driver`, pak v PowerShellu jako správce:
+   ```powershell
+   RUNDLL32.EXE SETUPAPI.DLL,InstallHinfSection DefaultInstall 132 $env:ANDROID_HOME\extras\google\Android_Emulator_Hypervisor_Driver\aehd.Inf
+   sc.exe start aehd
+   ```
+   Ověření: `emulator -accel-check` vypíše `AEHD … is installed and usable`. Driver se spouští s Windows sám. AEHD nefunguje, když běží Hyper-V, Windows Hypervisor Platform nebo WSL2. Pokud je zapneš, emulátor musí přejít na WHPX.
+3. Systémové obrazy a AVD:
+   ```powershell
+   android sdk install emulator system-images/android-26/google_apis/x86_64 system-images/android-35/google_apis/x86_64 system-images/android-37.0/google_apis/x86_64
+   avdmanager create avd -n Android8 -k "system-images;android-26;google_apis;x86_64" --device pixel_6
+   avdmanager create avd -n Motonavigace -k "system-images;android-35;google_apis;x86_64" --device pixel_6
+   avdmanager create avd -n Android17 -k "system-images;android-37.0;google_apis;x86_64" --device pixel_6
+   ```
+4. Spuštění a poloha GPS (Praha):
+   ```powershell
+   & "$env:ANDROID_HOME\emulator\emulator.exe" -avd Motonavigace
+   adb emu geo fix 14.4378 50.0755
+   ```
 
 ## Kompatibilita s verzemi Androidu
 
@@ -74,7 +135,16 @@ Co je pro nové verze připravené:
 - **Tematické ikony** (Android 13+) – všechny ikony mají monochromatickou vrstvu.
 - Android Lint (`./gradlew lintDebug`) bez chyb a bez volání API, které na Androidu 8 neexistuje.
 
-Ověřeno v emulátoru na Androidu 9 (mapa ve 3D, trasa, stahování, nastavení, jazyk, náklon, vyhledávání) a Androidu 15. Android 8.0 a 17 se na tomto Macu (Apple Silicon, málo místa na disku) spustit nepodařilo – Android 8 kryje Lint, Android 17 cílení a překlad.
+Ověřeno v emulátoru:
+
+| Verze | Co se ověřilo |
+|---|---|
+| Android 8.0 (API 26) | instalace, všechny obrazovky (mapa, hledání, stažení map, trasy a jízdy, náklon, nastavení), záznam jízdy jako služba na popředí; bez pádů |
+| Android 9 | mapa ve 3D, trasa, stahování, nastavení, jazyk, náklon, vyhledávání |
+| Android 15 | aplikace běží |
+| Android 17 (API 37) | totéž co Android 8.0 a navíc kreslení pod systémové lišty; bez pádů |
+
+Na Androidu 8.0 a 17 se testovalo bez stažené mapy a routovacích dat, takže vykreslení mapy a plánování trasy jsou ověřené jen na Androidu 9.
 
 ## Známá omezení
 - Čas se odhaduje podle třídy silnice a rychlostních limitů z OSM, ne podle skutečného provozu.
