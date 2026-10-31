@@ -136,4 +136,7 @@
     <string name="about_text"><![CDATA[Offline navigace pro motorkáře – mapy, plánování tras, záznam jízd a měření náklonu bez připojení k internetu.<br><br><b>Mapy:</b> Mapsforge / VTM (LGPL), data © přispěvatelé <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL)<br><b>Plánování tras:</b> BRouter (MIT)<br><b>Body zájmu:</b> Mapsforge POI]]></string>
     <string name="zoom_in">Přiblížit</string>
     <string name="zoom_out">Oddálit</string>
+    <string name="settings_manufacturer">Výrobce</string>
+    <string name="manufacturer_none">Nevybráno</string>
+    <string name="icon_changed">Ikona aplikace je teď silueta: %1$s. Na ploše se může projevit až za chvíli.</string>
 </resources>

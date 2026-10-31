@@ -1,7 +1,9 @@
 package cz.motonavigace
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
@@ -31,13 +33,15 @@ enum class BikeType(
     val avoidMotorways: Boolean,
     val avoidUnpaved: Boolean,
     val maxKmh: Double,
+    /** activity-alias v manifestu s ikonou siluety tohoto typu */
+    val launcherAlias: String,
 ) {
-    SPORT(0, R.string.bike_sport, R.string.bike_sport_desc, RouteType.CURVY, false, true, 130.0),
-    TOURING(1, R.string.bike_touring, R.string.bike_touring_desc, RouteType.FASTEST, false, true, 130.0),
-    NAKED(2, R.string.bike_naked, R.string.bike_naked_desc, RouteType.CURVY, false, true, 120.0),
-    ADVENTURE(3, R.string.bike_adventure, R.string.bike_adventure_desc, RouteType.CURVY, false, false, 120.0),
-    CRUISER(4, R.string.bike_cruiser, R.string.bike_cruiser_desc, RouteType.ECO, false, true, 110.0),
-    SCOOTER(5, R.string.bike_scooter, R.string.bike_scooter_desc, RouteType.SHORTEST, true, true, 90.0),
+    SPORT(0, R.string.bike_sport, R.string.bike_sport_desc, RouteType.CURVY, false, true, 130.0, ".LauncherSport"),
+    TOURING(1, R.string.bike_touring, R.string.bike_touring_desc, RouteType.FASTEST, false, true, 130.0, ".LauncherTouring"),
+    NAKED(2, R.string.bike_naked, R.string.bike_naked_desc, RouteType.CURVY, false, true, 120.0, ".LauncherNaked"),
+    ADVENTURE(3, R.string.bike_adventure, R.string.bike_adventure_desc, RouteType.CURVY, false, false, 120.0, ".LauncherAdventure"),
+    CRUISER(4, R.string.bike_cruiser, R.string.bike_cruiser_desc, RouteType.ECO, false, true, 110.0, ".LauncherCruiser"),
+    SCOOTER(5, R.string.bike_scooter, R.string.bike_scooter_desc, RouteType.SHORTEST, true, true, 90.0, ".LauncherScooter"),
 }
 
 /** Uživatelské nastavení aplikace. */
@@ -59,6 +63,34 @@ object Settings {
     var bike: BikeType
         get() = BikeType.entries.firstOrNull { it.id == prefs.getInt("bike", BikeType.TOURING.id) } ?: BikeType.TOURING
         set(value) = prefs.edit { putInt("bike", value.id) }
+
+    /** Výrobce motocyklu, prázdný = nevybráno. */
+    var manufacturer: String
+        get() = prefs.getString("manufacturer", "").orEmpty()
+        set(value) = prefs.edit { putString("manufacturer", value) }
+
+    /** Jen názvy – loga výrobců jsou ochranné známky, ikona ukazuje siluetu typu motocyklu. */
+    val MANUFACTURERS = listOf(
+        "Aprilia", "Benelli", "BMW", "CFMOTO", "Ducati", "Harley-Davidson", "Honda", "Husqvarna",
+        "Indian", "Jawa", "Kawasaki", "KTM", "Moto Guzzi", "MV Agusta", "Piaggio", "Royal Enfield",
+        "Suzuki", "Triumph", "Vespa", "Yamaha",
+    )
+
+    private const val DEFAULT_ALIAS = ".LauncherDefault"
+
+    /**
+     * Ikona aplikace podle typu motocyklu. Android neumí ikonu změnit přímo, přepínáme
+     * proto mezi activity-alias v manifestu – zapnutý je vždy právě jeden.
+     */
+    fun applyLauncherIcon(context: Context) {
+        val pm = context.packageManager
+        val wanted = bike.launcherAlias
+        for (alias in BikeType.entries.map { it.launcherAlias } + DEFAULT_ALIAS) {
+            val state = if (alias == wanted) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                else PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+            pm.setComponentEnabledSetting(ComponentName(context, context.packageName + alias), state, PackageManager.DONT_KILL_APP)
+        }
+    }
 
     /** Jazyk si pamatuje AppCompat (autoStoreLocales v manifestu), tady ho jen čteme a nastavujeme. */
     var language: AppLanguage

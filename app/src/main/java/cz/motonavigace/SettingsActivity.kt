@@ -3,6 +3,7 @@ package cz.motonavigace
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -20,6 +21,7 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         b.theme.title.setText(R.string.settings_theme)
+        b.manufacturer.title.setText(R.string.settings_manufacturer)
         b.bike.title.setText(R.string.settings_bike_type)
         b.language.title.setText(R.string.settings_language_app)
         b.about.title.text = getString(R.string.app_full_name)
@@ -35,6 +37,15 @@ class SettingsActivity : AppCompatActivity() {
         b.bike.root.setOnClickListener {
             choose(R.string.settings_bike_type, BikeType.entries.map { getString(it.label) }, Settings.bike.ordinal) {
                 Settings.bike = BikeType.entries[it]
+                changeIcon()
+                refresh()
+            }
+        }
+        b.manufacturer.root.setOnClickListener {
+            val current = Settings.MANUFACTURERS.indexOf(Settings.manufacturer)
+            choose(R.string.settings_manufacturer, Settings.MANUFACTURERS, current) {
+                Settings.manufacturer = Settings.MANUFACTURERS[it]
+                changeIcon()
                 refresh()
             }
         }
@@ -52,7 +63,13 @@ class SettingsActivity : AppCompatActivity() {
         return true
     }
 
+    private fun changeIcon() {
+        Settings.applyLauncherIcon(this)
+        Toast.makeText(this, getString(R.string.icon_changed, getString(Settings.bike.label)), Toast.LENGTH_LONG).show()
+    }
+
     private fun refresh() {
+        b.manufacturer.summary.text = Settings.manufacturer.ifEmpty { getString(R.string.manufacturer_none) }
         b.theme.summary.setText(Settings.theme.label)
         val bike = Settings.bike
         b.bike.summary.text = getString(bike.label) + "\n" + getString(bike.description)

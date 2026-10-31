@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Silueta motocyklu typu scooter pro ikonu aplikace -->
+    <!-- Zmenšeno do bezpečné zóny adaptivní ikony (kruh o poloměru 33) -->
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="0.76" android:scaleY="0.76" android:translateY="-3">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="4" android:fillColor="#00000000" android:pathData="M22.5,71a7.5,7.5 0 1,0 15.0,0a7.5,7.5 0 1,0 -15.0,0" />
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="4" android:fillColor="#00000000" android:pathData="M70.5,71a7.5,7.5 0 1,0 15.0,0a7.5,7.5 0 1,0 -15.0,0" />
+        <path android:fillColor="#FFFFFF" android:pathData="M22,63L24,52L38,50L50,50L52,60L64,60L70,40L73,32L80,32L78,41L83,63L76,66L36,67Z" />
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="4" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M70,32L80,30" />
+    </group>
+</vector>

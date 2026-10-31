@@ -22,10 +22,6 @@
             android:exported="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:launchMode="singleTask">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <!-- Otevření .gpx ze správce souborů nebo z e-mailu -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -37,6 +33,92 @@
                 <data android:mimeType="application/gpx" />
             </intent-filter>
         </activity>
+
+        <!-- Ikona v launcheru: výchozí logo, nebo silueta typu motocyklu z Nastavení.
+             Zapnutý je vždy jen jeden alias (Settings.applyLauncherIcon). -->
+        <activity-alias
+            android:name=".LauncherDefault"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherSport"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_sport"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherTouring"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_touring"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherNaked"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_naked"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherAdventure"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_adventure"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherCruiser"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_cruiser"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".LauncherScooter"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_scooter"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <activity
             android:name=".DownloadsActivity"

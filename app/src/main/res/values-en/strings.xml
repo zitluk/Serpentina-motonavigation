@@ -134,4 +134,7 @@
     <string name="about_text"><![CDATA[Offline navigation for motorcyclists – maps, route planning, ride recording and lean angle measurement without an internet connection.<br><br><b>Maps:</b> Mapsforge / VTM (LGPL), data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (ODbL)<br><b>Routing:</b> BRouter (MIT)<br><b>Points of interest:</b> Mapsforge POI]]></string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
+    <string name="settings_manufacturer">Manufacturer</string>
+    <string name="manufacturer_none">Not selected</string>
+    <string name="icon_changed">The app icon is now the %1$s silhouette. The home screen may take a moment to update.</string>
 </resources>
