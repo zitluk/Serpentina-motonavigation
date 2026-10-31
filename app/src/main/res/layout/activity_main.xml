@@ -109,6 +109,17 @@
                         android:layout_height="wrap_content"
                         android:textColor="#CFD8DC"
                         android:textSize="18sp" />
+
+                    <!-- Doporučené pruhy před manévrem (plní MainActivity) -->
+                    <LinearLayout
+                        android:id="@+id/navLanes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/lanes_bg"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="4dp"
+                        android:visibility="gone" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -307,6 +318,15 @@
                     android:layout_height="wrap_content"
                     android:visibility="gone" />
             </LinearLayout>
+
+            <!-- Alternativní trasy (plní MainActivity) -->
+            <LinearLayout
+                android:id="@+id/routeAlternatives"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="vertical"
+                android:visibility="gone" />
 
             <LinearLayout
                 android:id="@+id/routeDetails"

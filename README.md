@@ -9,7 +9,9 @@ Offline motonavigace pro Android inspirovaná aplikací [Cruiser](https://github
 - **Routing:** [BRouter](https://github.com/abrensch/brouter) 1.7.9 přímo v aplikaci, vlastní profil `app/src/main/assets/brouter/moto.brf`
   s typy tras Nejrychlejší / Nejkratší / Ekonomická / Více zatáček / Maximum zatáček a volbami bez dálnic / bez šotoliny / bez trajektů
 - **Vyhledávání:** offline v POI databázích Mapsforge (`*.poi`) – obce, místa, body zájmu, nebo souřadnice
-- **Navigace:** pokyny z BRouteru, české hlasové hlášky (TextToSpeech), přepočet po sjetí z trasy, mapa otočená ve směru jízdy
+- **Navigace:** pokyny z BRouteru, české hlasové hlášky (TextToSpeech), přepočet po sjetí z trasy, mapa otočená ve směru jízdy Před manévrem na vícepruhové silnici ukáže doporučené pruhy a řekne je hlasem – odhad podle počtu pruhů a směru odbočení (offline data BRouteru neobsahují `turn:lanes`).
+- **Více tras:** ke každému cíli až 3 varianty (BRouter alternativy) s délkou a časem; vybraná červeně, ostatní šedě
+- **Ikona polohy:** šipka nebo silueta motocyklu (sportovní, cestovní, naked, enduro, chopper, skútr) v 8 barvách, natočená po směru jízdy
 - **Projížďka po okolí:** okruh zvolené délky (20–300 km) z aktuální polohy, náhodný směr, tlačítko „Jiný okruh“
 - **Záznam jízdy:** služba na popředí (běží i se zhasnutou obrazovkou), ukládá GPX se statistikami (vzdálenost, čas, Ø a max. rychlost, stoupání)
 - **Náklon motocyklu:** menu → Náklon motocyklu – ukazatel náklonu, max. náklon vlevo/vpravo, rychlost a max. rychlost, zrychlení, max. zrychlení a brzdění (v g). Za jízdy se náklon počítá z gyroskopu a rychlosti GPS (sin φ = v·ω/g), při stání z polohy telefonu; maxima se ukládají a dají se vynulovat

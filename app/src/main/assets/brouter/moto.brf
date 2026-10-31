@@ -165,8 +165,12 @@ assign classifiermask add          isbadoneway
                       add multiply islinktype     8
                           multiply isgoodforcars 16
 
-# BRouter názvy silnic nemá; maxspeed chceme ve zprávě u bodů kvůli odhadu času
+# BRouter názvy silnic nemá; maxspeed chceme ve zprávě u bodů kvůli odhadu času,
+# lanes, oneway a junction kvůli navádění do pruhů (BRouter předá jen použité tagy)
 assign dummyUsage = maxspeed=
+assign dummyUsageLanes = lanes=
+assign dummyUsageOneway = oneway=
+assign dummyUsageJunction = junction=
 
 ---context:node  # following code refers to node tags
 

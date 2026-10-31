@@ -28,6 +28,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
+import androidx.core.view.doOnPreDraw
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
@@ -66,6 +67,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private var routeJob: Job? = null
     private var route: Route? = null
     private var routeTypeButtons: List<MaterialButton> = emptyList()
+    /** Nalezené varianty trasy; [route] je ta vybraná. */
+    private var routes: List<Route> = emptyList()
 
     // GPX stopa zobrazená z knihovny
     private var shownTrack: TrackLibrary.Entry? = null
@@ -367,11 +370,17 @@ class MainActivity : AppCompatActivity(), LocationListener {
     /** Vejde body do části mapy, kterou nezakrývá horní lišta ani spodní panel. */
     private fun zoomToPoints(points: List<LatLong>) {
         if (points.size < 2) return
-        // Až po rozvržení, ať známe skutečnou velikost panelu
-        b.root.post {
+        // Až po rozvržení (těsně před vykreslením), ať známe skutečnou výšku panelu
+        // i s právě přidanými tlačítky variant
+        b.root.requestLayout()
+        b.root.doOnPreDraw {
             val w = b.mapView.width
             val h = b.mapView.height
-            val top = b.topArea.bottom
+            // Spodní hrana vyhledávací lišty (nebo navigačního panelu); sloupec tlačítek
+            // vpravo pod ní mapu nezakrývá, takže se do volné plochy nepočítá
+            val bar = if (b.navBanner.visibility == View.VISIBLE) b.navBanner else b.searchBar
+            val top = IntArray(2).also(bar::getLocationInWindow)[1] + bar.height -
+                IntArray(2).also(b.mapView::getLocationInWindow)[1]
             val panel = b.routePanel.takeIf { it.visibility == View.VISIBLE }
             // Panel vlevo (široké obrazovky) zabírá šířku, ne výšku
             val panelBeside = panel != null && panel.width < b.root.width * 0.7
@@ -601,7 +610,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.destinationName.text = destinationName
         b.destinationName.visibility = if (destinationName != null) View.VISIBLE else View.GONE
         b.btnNewLoop.visibility = if (roundTripKm != null) View.VISIBLE else View.GONE
-        calculateRoute(onDone = { if (zoomWhenDone) zoomToRoute(it) })
+        // Přiblížit tak, aby byly vidět všechny varianty trasy
+        calculateRoute(onDone = { if (zoomWhenDone) zoomToPoints(routes.flatMap(Route::points)) })
     }
 
     private fun calculateRoute(onDone: (Route) -> Unit = {}) {
@@ -630,10 +640,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.btnNavigate.isEnabled = false
         routeJob = lifecycleScope.launch {
             try {
-                val r = RoutePlanner.calculate(listOf(s) + vias + e, options(), looseWaypoints = roundTripKm != null)
-                showRoute(r)
-                b.routeStatus.text = formatSummary(r)
-                onDone(r)
+                val points = listOf(s) + vias + e
+                // Okruh má vlastní hledání variant („Jiný okruh“), alternativy jen u běžné trasy
+                val found = if (roundTripKm != null) listOf(RoutePlanner.calculate(points, options(), looseWaypoints = true))
+                    else RoutePlanner.calculateAlternatives(points, options())
+                showRoutes(found, 0)
+                onDone(found[0])
             } catch (ex: RoutingException) {
                 showRoute(null)
                 b.routeStatus.text = ex.describe(this@MainActivity)
@@ -648,7 +660,32 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 
-    private fun showRoute(r: Route?) {
+    /** Zobrazí varianty trasy, [selected] červeně, ostatní šedě, a tlačítka pro výběr. */
+    private fun showRoutes(found: List<Route>, selected: Int) {
+        routes = found
+        val r = found[selected]
+        showRoute(r, keepAlternatives = true)
+        b.routeStatus.text = formatSummary(r)
+        mapCtl.showAlternatives(found.filterIndexed { i, _ -> i != selected }.map { it.points })
+        b.routeAlternatives.visibility = if (found.size > 1) View.VISIBLE else View.GONE
+        if (found.size > 1) {
+            fillGrid(b.routeAlternatives, found.mapIndexed { i, alt ->
+                toggleButton(R.string.app_name).apply {
+                    text = getString(R.string.route_variant, formatDistance(alt.lengthMeters.toDouble()),
+                        formatDuration(alt.durationSeconds.toDouble()))
+                    isChecked = i == selected
+                    setOnClickListener { showRoutes(routes, i) }
+                }
+            }, columns = found.size)
+        }
+    }
+
+    private fun showRoute(r: Route?, keepAlternatives: Boolean = false) {
+        if (!keepAlternatives) {
+            routes = listOfNotNull(r)
+            mapCtl.showAlternatives(emptyList())
+            b.routeAlternatives.visibility = View.GONE
+        }
         route = r
         mapCtl.showRoute(r?.points)
         b.btnNavigate.isEnabled = r != null
@@ -855,6 +892,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         val here = LatLong(loc.latitude, loc.longitude)
         setNavigationUi(true)
+        // Během navigace jen vybraná trasa, šedé varianty by mátly
+        mapCtl.showAlternatives(emptyList())
         mapCtl.startFollowing()
         if (here.sphericalDistance(r.points.first()) > 100) {
             // Trasa nezačíná u jezdce – spočítáme ji z aktuální polohy
@@ -906,6 +945,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             else location.bearing.takeIf { location.hasBearing() && location.speed > 1.5f }
         mapCtl.follow(state.snapped.takeUnless { state.offRoute } ?: pos, heading, location.speed)
 
+        showLanes(state.next?.takeIf { state.toNext < LANES_DISTANCE && !state.offRoute })
         b.navArrow.text = Navigator.arrow(state.next)
         b.navDistance.text = formatDistance(state.toNext)
         b.navInstruction.text = state.next?.let { Navigator.instruction(it).replaceFirstChar { c -> c.uppercase() } }
@@ -924,6 +964,32 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 speak(getString(R.string.recalculating).removeSuffix("…"))
                 recalculateFrom(pos, passedSegment = state.segment)
             }
+        }
+    }
+
+    /**
+     * Řada pruhů v horním panelu: doporučené bíle se šipkou manévru, ostatní šedě rovně.
+     * Ukazuje se jen na vícepruhových silnicích a v posledních [LANES_DISTANCE] metrech.
+     */
+    private fun showLanes(m: Maneuver?) {
+        val hint = m?.lanes
+        b.navLanes.visibility = if (hint == null) View.GONE else View.VISIBLE
+        if (hint == null) return
+        val arrow = Navigator.arrow(m)
+        b.navLanes.removeAllViews()
+        for (i in 0 until hint.count) {
+            val on = i in hint.recommended
+            b.navLanes.addView(TextView(this).apply {
+                text = if (on) arrow else "↑"
+                textSize = 30f
+                setTextColor(if (on) 0xFFFFFFFF.toInt() else 0x66FFFFFF)
+                gravity = Gravity.CENTER
+                minWidth = (40 * resources.displayMetrics.density).toInt()
+                if (on) setTypeface(typeface, android.graphics.Typeface.BOLD)
+            })
+            // Dělicí čára mezi pruhy
+            if (i < hint.count - 1) b.navLanes.addView(View(this).apply { setBackgroundColor(0x55FFFFFF) },
+                LinearLayout.LayoutParams((2 * resources.displayMetrics.density).toInt(), ViewGroup.LayoutParams.MATCH_PARENT))
         }
     }
 
@@ -962,5 +1028,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun speak(text: String) {
         if (ttsReady) tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, text)
+    }
+
+    private companion object {
+        /** Odkud před manévrem ukazovat pruhy (m). */
+        const val LANES_DISTANCE = 1500.0
     }
 }

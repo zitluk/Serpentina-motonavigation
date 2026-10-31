@@ -37,7 +37,11 @@ data class Maneuver(
     val command: String,
     /** Výjezd z kruhového objezdu, jinak 0. */
     val exit: Int,
-)
+    /** Tagy cesty, po které se k manévru přijíždí (pro navádění do pruhů). */
+    val approachTags: String? = null,
+) {
+    val lanes: LaneHint? get() = LaneHint.forManeuver(this, approachTags)
+}
 
 class Route(
     val points: List<LatLong>,
@@ -73,7 +77,31 @@ object RoutePlanner {
      * @param looseWaypoints průjezdní body nemusí ležet u silnice (vygenerovaný okruh) –
      *   BRouter pak hledá nejbližší cestu i ve větší vzdálenosti.
      */
-    suspend fun calculate(waypoints: List<LatLong>, options: RouteOptions, looseWaypoints: Boolean = false): Route =
+    /**
+     * Až [max] různých tras mezi stejnými body (BRouter alternativeIdx 0, 1, 2…).
+     * První je vždy ta nejlepší; alternativy, které se s už nalezenými z velké části
+     * kryjí, se zahodí. Chyba výpočtu alternativy nevadí, chyba hlavní trasy ano.
+     */
+    suspend fun calculateAlternatives(waypoints: List<LatLong>, options: RouteOptions, max: Int = 3): List<Route> {
+        val result = mutableListOf(calculate(waypoints, options))
+        for (idx in 1 until max) {
+            val alt = try { calculate(waypoints, options, alternative = idx) } catch (_: RoutingException) { break }
+            if (result.none { overlap(it, alt) > 0.85 }) result += alt
+        }
+        return result
+    }
+
+    /** Podíl bodů [b], které leží i na trase [a] (s přesností ~10 m). */
+    private fun overlap(a: Route, b: Route): Double {
+        fun key(p: LatLong) = "${Math.round(p.latitude * 1e4)}:${Math.round(p.longitude * 1e4)}"
+        val keys = a.points.mapTo(HashSet(), ::key)
+        return b.points.count { key(it) in keys }.toDouble() / b.points.size
+    }
+
+    suspend fun calculate(
+        waypoints: List<LatLong>, options: RouteOptions,
+        looseWaypoints: Boolean = false, alternative: Int = 0,
+    ): Route =
         withContext(Dispatchers.Default) {
             require(waypoints.size >= 2) { "Trasa potřebuje start a cíl" }
             val missing = missingSegments(waypoints)
@@ -91,6 +119,7 @@ object RoutePlanner {
                 )
                 turnInstructionMode = TURN_INSTRUCTION_MODE
                 useDynamicDistance = looseWaypoints
+                alternativeIdx = alternative
             }
             val nodes = waypoints.mapIndexed { i, p ->
                 OsmNodeNamed().apply {
@@ -121,7 +150,7 @@ object RoutePlanner {
             }
             val maneuvers = TrackAccess.hints(track)
                 .filter { it.index in 0 until n }
-                .map { Maneuver(it.index, dist[it.index], it.command, it.exit) }
+                .map { Maneuver(it.index, dist[it.index], it.command, it.exit, it.approachTags) }
                 .plus(Maneuver(n - 1, dist[n - 1], "END", 0))
                 .distinctBy { it.index to it.command }
             Route(pts, dist, time, maneuvers, track.distance)

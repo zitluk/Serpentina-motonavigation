@@ -18,6 +18,8 @@ public final class TrackAccess {
     public int exit;
     /** Tagy cesty, na kterou se odbočuje (highway=…). */
     public String wayTags;
+    /** Tagy cesty, po které se k manévru přijíždí (lanes=…, oneway=…). */
+    public String approachTags;
   }
 
   private TrackAccess() {
@@ -32,6 +34,7 @@ public final class TrackAccess {
       h.command = command(vh.cmd);
       h.exit = Math.abs(vh.roundaboutExit);
       h.wayTags = vh.goodWay == null ? null : vh.goodWay.wayKeyValues;
+      h.approachTags = vh.oldWay == null ? null : vh.oldWay.wayKeyValues;
       result.add(h);
     }
     return result;

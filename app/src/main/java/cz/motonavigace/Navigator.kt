@@ -89,8 +89,8 @@ class Navigator(val route: Route, private val speak: (String) -> Unit) {
             }
             toNext <= early && toNext > now * 1.5 && 0 !in done -> {
                 done += 0
-                speak(if (Settings.isEnglish()) "In ${spokenDistanceEn(toNext)}, ${instruction(m)}."
-                    else "Za ${spokenDistance(toNext)} ${instruction(m)}.")
+                speak(if (Settings.isEnglish()) "In ${spokenDistanceEn(toNext)}, ${instruction(m)}${laneAdvice(m)}."
+                    else "Za ${spokenDistance(toNext)} ${instruction(m)}${laneAdvice(m)}.")
             }
         }
     }
@@ -182,6 +182,19 @@ class Navigator(val route: Route, private val speak: (String) -> Unit) {
             }
             m >= 100 -> "${(Math.round(m / 50) * 50)} meters"
             else -> "${(Math.round(m / 10) * 10)} meters"
+        }
+
+        /** Doplněk k předběžnému hlášení: „, držte se v levém pruhu“. */
+        private fun laneAdvice(m: Maneuver): String {
+            val hint = m.lanes ?: return ""
+            val single = hint.recommended.size == 1
+            return when (hint.side) {
+                LaneHint.Side.LEFT -> if (Settings.isEnglish()) ", use the left lane${if (single) "" else "s"}"
+                    else if (single) ", zařaďte se do levého pruhu" else ", držte se v levých pruzích"
+                LaneHint.Side.RIGHT -> if (Settings.isEnglish()) ", use the right lane${if (single) "" else "s"}"
+                    else if (single) ", zařaďte se do pravého pruhu" else ", držte se v pravých pruzích"
+                LaneHint.Side.ANY -> ""
+            }
         }
 
         private fun ordinal(n: Int) = when (n) {

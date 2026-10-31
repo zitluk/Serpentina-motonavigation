@@ -64,6 +64,7 @@ class MapController(
 
     private val trackLayer = PathLayer(map, line(0xB08E24AA.toInt(), 5f))
     private val routeLayer = PathLayer(map, line(0xCCE53935.toInt(), 7f))
+    private val altLayers = List(2) { PathLayer(map, line(0xAA78909C.toInt(), 6f)) }
     private val recordedLayer = PathLayer(map, line(0xCC1E88E5.toInt(), 5f))
     private val pinStart = symbol(R.drawable.ic_pin_start)
     private val pinVia = symbol(R.drawable.ic_pin_via)
@@ -87,6 +88,7 @@ class MapController(
         val layers = map.layers()
         layers.add(LongPressLayer(onLongPress))
         layers.add(trackLayer)
+        altLayers.forEach(layers::add)
         layers.add(routeLayer)
         layers.add(recordedLayer)
         layers.add(pins)
@@ -263,6 +265,10 @@ class MapController(
     }
 
     fun showRoute(points: List<LatLong>?) = setPath(routeLayer, points)
+
+    /** Nevybrané alternativy šedě pod hlavní trasou. */
+    fun showAlternatives(routes: List<List<LatLong>>) =
+        altLayers.forEachIndexed { i, layer -> setPath(layer, routes.getOrNull(i)) }
     fun showTrack(points: List<LatLong>?) = setPath(trackLayer, points)
     fun showRecorded(points: List<LatLong>?) = setPath(recordedLayer, points)
 

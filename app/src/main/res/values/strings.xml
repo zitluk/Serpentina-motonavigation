@@ -146,4 +146,5 @@
         <item>Červená</item><item>Oranžová</item><item>Žlutá</item><item>Zelená</item>
         <item>Modrá</item><item>Fialová</item><item>Černá</item><item>Bílá</item>
     </string-array>
+    <string name="route_variant">%1$s\n%2$s</string>
 </resources>

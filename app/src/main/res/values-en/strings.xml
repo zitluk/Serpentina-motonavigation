@@ -144,4 +144,5 @@
         <item>Red</item><item>Orange</item><item>Yellow</item><item>Green</item>
         <item>Blue</item><item>Purple</item><item>Black</item><item>White</item>
     </string-array>
+    <string name="route_variant">%1$s\n%2$s</string>
 </resources>
