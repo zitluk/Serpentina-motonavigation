@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Zástupná ikona výrobce: jen název značky písmem Roboto (Apache 2.0), ne logo.
-     Vlastní logo: smaž tento soubor a vlož res/drawable-nodpi/ic_brand_ktm.png (viz README). -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFF" android:pathData="M31.71 43.0V65.0H26.54V43.0ZM42.62 43.0 35.67 54.15 31.39 59.60 30.41 54.74 32.98 49.90 36.26 43.0ZM36.39 65.0 32.37 55.08 36.41 52.05 42.50 65.0ZM53.39 43.0V65.0H48.21V43.0ZM58.72 43.0V47.09H43.03V43.0ZM63.54 43.0H67.73L71.19 58.30L74.65 43.0H78.82L72.90 65.0H69.48ZM60.96 43.0H65.30L66.13 59.86V65.0H60.96ZM77.07 43.0H81.42V65.0H76.24V59.86Z" />
-</vector>

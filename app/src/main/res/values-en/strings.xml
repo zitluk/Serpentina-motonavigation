@@ -131,7 +131,7 @@
     <string name="language_english">English</string>
     <string name="settings_about">About</string>
     <string name="about_version">Version %1$s</string>
-    <string name="about_text"><![CDATA[Offline navigation for motorcyclists – maps, route planning, ride recording and lean angle measurement without an internet connection.<br><br><b>Maps:</b> Mapsforge / VTM (LGPL), data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (ODbL)<br><b>Routing:</b> BRouter (MIT)<br><b>Points of interest:</b> Mapsforge POI]]></string>
+    <string name="about_text"><![CDATA[Offline navigation for motorcyclists – maps, route planning, ride recording and lean angle measurement without an internet connection.<br><br><b>Maps:</b> Mapsforge / VTM (LGPL), data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors (ODbL)<br><b>Routing:</b> BRouter (MIT)<br><b>Points of interest:</b> Mapsforge POI<br><br>Manufacturer logos are trademarks of their owners (source: Wikimedia Commons) and only identify your motorcycle.]]></string>
     <string name="zoom_in">Zoom in</string>
     <string name="zoom_out">Zoom out</string>
     <string name="settings_manufacturer">Manufacturer</string>

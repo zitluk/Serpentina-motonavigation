@@ -133,7 +133,7 @@
     <string name="language_english">English</string>
     <string name="settings_about">O aplikaci</string>
     <string name="about_version">Verze %1$s</string>
-    <string name="about_text"><![CDATA[Offline navigace pro motorkáře – mapy, plánování tras, záznam jízd a měření náklonu bez připojení k internetu.<br><br><b>Mapy:</b> Mapsforge / VTM (LGPL), data © přispěvatelé <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL)<br><b>Plánování tras:</b> BRouter (MIT)<br><b>Body zájmu:</b> Mapsforge POI]]></string>
+    <string name="about_text"><![CDATA[Offline navigace pro motorkáře – mapy, plánování tras, záznam jízd a měření náklonu bez připojení k internetu.<br><br><b>Mapy:</b> Mapsforge / VTM (LGPL), data © přispěvatelé <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL)<br><b>Plánování tras:</b> BRouter (MIT)<br><b>Body zájmu:</b> Mapsforge POI<br><br>Loga výrobců jsou ochranné známky svých vlastníků (zdroj: Wikimedia Commons) a slouží jen k označení motocyklu.]]></string>
     <string name="zoom_in">Přiblížit</string>
     <string name="zoom_out">Oddálit</string>
     <string name="settings_manufacturer">Výrobce</string>

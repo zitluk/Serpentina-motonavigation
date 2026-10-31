@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Zástupná ikona výrobce: jen název značky písmem Roboto (Apache 2.0), ne logo.
-     Vlastní logo: smaž tento soubor a vlož res/drawable-nodpi/ic_brand_yamaha.png (viz README). -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFF" android:pathData="M26.96 48.29 28.42 53.24 29.90 48.29H32.78L29.80 55.60V59.70H27.07V55.60L24.08 48.29ZM37.95 50.69 35.83 59.70H32.94L36.46 48.29H38.26ZM39.61 59.70 37.49 50.69 37.13 48.29H38.97L42.50 59.70ZM39.70 55.45V57.57H34.75V55.45ZM44.70 48.29H46.87L48.67 56.23L50.46 48.29H52.63L49.55 59.70H47.78ZM43.36 48.29H45.61L46.04 57.04V59.70H43.36ZM51.72 48.29H53.98V59.70H51.29V57.04ZM59.86 50.69 57.73 59.70H54.85L58.37 48.29H60.17ZM61.52 59.70 59.39 50.69 59.04 48.29H60.87L64.40 59.70ZM61.60 55.45V57.57H56.66V55.45ZM71.69 52.82V54.94H67.07V52.82ZM67.95 48.29V59.70H65.27V48.29ZM73.50 48.29V59.70H70.82V48.29ZM79.36 50.69 77.24 59.70H74.35L77.87 48.29H79.68ZM81.02 59.70 78.90 50.69 78.55 48.29H80.38L83.91 59.70ZM81.11 55.45V57.57H76.16V55.45Z" />
-</vector>

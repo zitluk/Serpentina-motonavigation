@@ -66,13 +66,6 @@ Testy (statistiky jízdy):
 
 ## Ikona aplikace podle výrobce
 
-Výběr výrobce v Nastavení přepne ikonu aplikace (Android to umí jen přes `activity-alias` v manifestu, zapnutý je vždy jeden – `Settings.applyLauncherIcon`). V repozitáři jsou **zástupné ikony s názvem značky** (písmo Roboto, Apache 2.0), ne loga – loga výrobců jsou ochranné známky a jejich použití, hlavně při zveřejnění aplikace, je na tobě.
+Výběr výrobce v Nastavení přepne ikonu aplikace i logo na úvodní obrazovce (Android 12+ ji kreslí z ikony spuštěné aktivity). Android ikonu neumí změnit přímo – každý výrobce má `activity-alias` v manifestu a zapnutý je vždy jeden (`Settings.applyLauncherIcon`).
 
-Vlastní logo pro značku (např. Honda):
-
-1. Smaž `app/src/main/res/drawable/ic_brand_honda.xml`.
-2. Vlož `app/src/main/res/drawable-nodpi/ic_brand_honda.png` – čtverec 432 × 432 px, průhledné pozadí, logo uprostřed v kruhu o průměru ~260 px (zbytek launcher ořízne).
-3. Pozadí ikony je barva `brand_icon_bg` v `res/values/colors.xml`.
-4. Znovu sestav aplikaci.
-
-Zástupné ikony se generují skriptem `tools/brand_icons.py` (potřebuje `fonttools` a Roboto-Regular.ttf, např. z `/system/fonts` v emulátoru).
+Loga 17 výrobců pocházejí z Wikimedia Commons, zdroje a licence jsou v [LOGOS.md](LOGOS.md). Benelli, Jawa a Moto Guzzi mají zástupnou ikonu s názvem značky. Vlastní logo: smaž `app/src/main/res/drawable/ic_brand_<značka>.xml` (pokud existuje) a vlož `app/src/main/res/drawable-nodpi/ic_brand_<značka>.png` – 432 × 432 px, průhledné pozadí, logo uprostřed v kruhu o průměru ~260 px.
