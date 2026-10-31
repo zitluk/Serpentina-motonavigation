@@ -17,7 +17,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -133,11 +132,13 @@ class MainActivity : AppCompatActivity(), LocationListener {
         restoreMapPosition()
         // Naklonění jde nastavit, až mapa zná svou velikost
         b.mapView.post { setViewMode(MapViewMode.byId(prefs.getInt("view_mode", MapViewMode.PERSPECTIVE_3D.id))) }
-        b.btnViewMode.setOnClickListener { showViewModeMenu(it) }
+        b.btnViewMode.setOnClickListener { showViewModeMenu() }
+        b.btnZoomIn.setOnClickListener { mapCtl.zoomBy(1) }
+        b.btnZoomOut.setOnClickListener { mapCtl.zoomBy(-1) }
         setupRoutePanel()
 
         b.searchText.setOnClickListener { openSearch() }
-        b.btnMenu.setOnClickListener { showMenu(it) }
+        b.btnMenu.setOnClickListener { showMenu() }
         b.btnDownloads.setOnClickListener { openDownloads() }
         b.btnNoMapsDownload.setOnClickListener { openDownloads() }
         b.btnLocation.setOnClickListener {
@@ -292,34 +293,22 @@ class MainActivity : AppCompatActivity(), LocationListener {
         searchLauncher.launch(intent)
     }
 
-    private fun showMenu(anchor: View) {
-        PopupMenu(this, anchor).apply {
-            menu.add(0, 1, 0, R.string.search_title)
-            menu.add(0, 8, 0, R.string.round_trip)
-            menu.add(0, 4, 1, if (Recording.state.value.active) R.string.recording_stop else R.string.recording_start)
-            menu.add(0, 5, 2, R.string.tracks_title)
-            menu.add(0, 9, 2, R.string.lean_title)
-            menu.add(0, 6, 3, R.string.import_gpx)
-            menu.add(0, 2, 4, R.string.offline_data)
-            menu.add(0, 10, 7, R.string.settings_title)
-            if (start != null || end != null) menu.add(0, 3, 5, R.string.clear_route)
-            if (shownTrack != null) menu.add(0, 7, 6, R.string.track_hide)
-            setOnMenuItemClickListener {
-                when (it.itemId) {
-                    1 -> openSearch()
-                    2 -> openDownloads()
-                    3 -> clearRoute()
-                    4 -> if (Recording.state.value.active) confirmStopRecording() else requestRecording()
-                    5 -> tracksLauncher.launch(Intent(this@MainActivity, TracksActivity::class.java))
-                    6 -> importLauncher.launch(arrayOf("*/*"))
-                    7 -> hideTrack()
-                    8 -> askRoundTripLength()
-                    9 -> startActivity(Intent(this@MainActivity, LeanActivity::class.java))
-                    10 -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                }
-                true
-            }
-        }.show()
+    private fun showMenu() {
+        fun item(text: Int, action: () -> Unit) = GloveMenu.Item(getString(text), action = action)
+        val items = mutableListOf(
+            item(R.string.search_title) { openSearch() },
+            item(R.string.round_trip) { askRoundTripLength() },
+            if (Recording.state.value.active) item(R.string.recording_stop) { confirmStopRecording() }
+            else item(R.string.recording_start) { requestRecording() },
+            item(R.string.tracks_title) { tracksLauncher.launch(Intent(this, TracksActivity::class.java)) },
+            item(R.string.lean_title) { startActivity(Intent(this, LeanActivity::class.java)) },
+            item(R.string.import_gpx) { importLauncher.launch(arrayOf("*/*")) },
+            item(R.string.offline_data) { openDownloads() },
+        )
+        if (start != null || end != null) items += item(R.string.clear_route) { clearRoute() }
+        if (shownTrack != null) items += item(R.string.track_hide) { hideTrack() }
+        items += item(R.string.settings_title) { startActivity(Intent(this, SettingsActivity::class.java)) }
+        GloveMenu.show(this, null, items)
     }
 
     // ---------------------------------------------------------------- mapa
@@ -343,14 +332,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
         prefs.edit { putInt("view_mode", mode.id) }
     }
 
-    private fun showViewModeMenu(anchor: View) {
-        PopupMenu(this, anchor).apply {
-            MapViewMode.entries.forEach { m ->
-                menu.add(0, m.id, m.id, m.title).isChecked = m == mapCtl.mode
-            }
-            menu.setGroupCheckable(0, true, true)
-            setOnMenuItemClickListener { setViewMode(MapViewMode.byId(it.itemId)); true }
-        }.show()
+    private fun showViewModeMenu() {
+        GloveMenu.show(this, getString(R.string.view_mode), MapViewMode.entries.map { m ->
+            GloveMenu.Item(getString(m.title), checked = m == mapCtl.mode) { setViewMode(m) }
+        })
     }
 
     /** Zobrazí celou trasu nad panelem trasy. */
@@ -507,29 +492,30 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun onMapLongPress(p: LatLong) = runOnUiThread {
         if (navigator != null) return@runOnUiThread
-        val items = arrayOf(getString(R.string.set_start), getString(R.string.add_via), getString(R.string.set_end))
-        MaterialAlertDialogBuilder(this)
-            .setTitle("%.5f, %.5f".format(p.latitude, p.longitude))
-            .setItems(items) { _, which ->
-                when (which) {
-                    0 -> start = p
-                    1 -> {
-                        if (viasFromTrack) vias.clear()
-                        viasFromTrack = false
-                        roundTripKm = null
-                        vias += p
-                    }
-                    2 -> {
-                        end = p
-                        roundTripKm = null
-                        destinationName = null
-                        // Bez startu vyjedeme z aktuální polohy
-                        if (start == null) lastLocation?.let { start = LatLong(it.latitude, it.longitude) }
-                    }
+        fun choose(which: Int) {
+            when (which) {
+                0 -> start = p
+                1 -> {
+                    if (viasFromTrack) vias.clear()
+                    viasFromTrack = false
+                    roundTripKm = null
+                    vias += p
                 }
-                onWaypointsChanged()
+                2 -> {
+                    end = p
+                    roundTripKm = null
+                    destinationName = null
+                    // Bez startu vyjedeme z aktuální polohy
+                    if (start == null) lastLocation?.let { start = LatLong(it.latitude, it.longitude) }
+                }
             }
-            .show()
+            onWaypointsChanged()
+        }
+        GloveMenu.show(this, "%.5f, %.5f".format(p.latitude, p.longitude), listOf(
+            GloveMenu.Item(getString(R.string.set_start)) { choose(0) },
+            GloveMenu.Item(getString(R.string.add_via)) { choose(1) },
+            GloveMenu.Item(getString(R.string.set_end)) { choose(2) },
+        ))
     }
 
     private fun clearRoute() {

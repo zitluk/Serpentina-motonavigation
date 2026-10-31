@@ -183,7 +183,18 @@ class MapController(
         map.animator().animateTo(400, pos)
     }
 
+    /** Ruční přiblížení tlačítky během navigace se přičítá k automatickému zoomu. */
+    private var navZoomOffset = 0
+
+    fun zoomBy(delta: Int) {
+        if (navigating) navZoomOffset = (navZoomOffset + delta).coerceIn(-4, 3)
+        val pos = map.mapPosition
+        pos.setZoomLevel((pos.zoomLevel + delta).coerceIn(3, 20))
+        map.animator().animateTo(250, pos)
+    }
+
     fun startFollowing() {
+        navZoomOffset = 0
         navigating = true
         map.viewport().setMapViewCenter(0f, navPivotY())
     }
@@ -201,7 +212,8 @@ class MapController(
         val pos = map.mapPosition
         pos.setPosition(p.latitude, p.longitude)
         val fast = speedMps > 22
-        pos.setZoomLevel(if (mode == MapViewMode.PERSPECTIVE_3D) (if (fast) 14 else 15) else (if (fast) 15 else 16))
+        val auto = if (mode == MapViewMode.PERSPECTIVE_3D) (if (fast) 14 else 15) else (if (fast) 15 else 16)
+        pos.setZoomLevel((auto + navZoomOffset).coerceIn(3, 20))
         when (mode) {
             MapViewMode.NORTH_UP -> { pos.setBearing(0f); pos.setTilt(0f) }
             MapViewMode.HEADING_2D -> { headingDeg?.let { pos.setBearing(-it) }; pos.setTilt(0f) }

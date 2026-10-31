@@ -21,8 +21,8 @@
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/searchBar"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            app:cardCornerRadius="28dp"
+            android:layout_height="64dp"
+            app:cardCornerRadius="32dp"
             app:cardElevation="4dp">
 
             <LinearLayout
@@ -33,9 +33,10 @@
 
                 <ImageButton
                     android:id="@+id/btnMenu"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
                     android:layout_marginStart="4dp"
+                    android:scaleType="center"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/menu"
                     android:src="@drawable/ic_menu" />
@@ -116,6 +117,7 @@
                 android:layout_gravity="start|top"
                 android:textColor="#FFFFFF"
                 android:visibility="gone"
+                app:chipMinHeight="48dp"
                 app:chipBackgroundColor="#C62828"
                 app:chipIcon="@drawable/ic_record"
                 app:chipIconSize="12dp"
@@ -128,37 +130,67 @@
                 android:layout_gravity="end"
                 android:orientation="vertical">
 
+                <!-- Všechna tlačítka 64 dp, aby se dala trefit v rukavicích -->
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/btnDownloads"
-                    style="?attr/floatingActionButtonSmallSecondaryStyle"
+                    style="?attr/floatingActionButtonSecondaryStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:contentDescription="@string/offline_data"
+                    app:fabCustomSize="64dp"
+                    app:maxImageSize="30dp"
                     app:srcCompat="@drawable/ic_download" />
 
                 <!-- Režim zobrazení mapy: 3D / 2D / sever nahoře -->
                 <Button
                     android:id="@+id/btnViewMode"
                     style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="8dp"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_marginTop="12dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
                     android:contentDescription="@string/view_mode"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    android:textSize="13sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
-                    app:cornerRadius="12dp" />
+                    app:cornerRadius="16dp" />
 
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
                     android:id="@+id/btnLocation"
-                    style="?attr/floatingActionButtonSmallSecondaryStyle"
+                    style="?attr/floatingActionButtonSecondaryStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="12dp"
                     android:contentDescription="@string/my_location"
+                    app:fabCustomSize="64dp"
+                    app:maxImageSize="30dp"
                     app:srcCompat="@drawable/ic_my_location" />
+
+                <!-- Přiblížení tlačítky – roztažení dvěma prsty v rukavicích nejde -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/btnZoomIn"
+                    style="?attr/floatingActionButtonSecondaryStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:contentDescription="@string/zoom_in"
+                    app:fabCustomSize="64dp"
+                    app:maxImageSize="34dp"
+                    app:srcCompat="@drawable/ic_zoom_in" />
+
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/btnZoomOut"
+                    style="?attr/floatingActionButtonSecondaryStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:contentDescription="@string/zoom_out"
+                    app:fabCustomSize="64dp"
+                    app:maxImageSize="34dp"
+                    app:srcCompat="@drawable/ic_zoom_out" />
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>
@@ -236,7 +268,6 @@
                     style="?attr/borderlessButtonStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minHeight="0dp"
                     android:text="@string/round_trip_other"
                     android:visibility="gone" />
             </LinearLayout>
@@ -276,27 +307,27 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    app:chipSpacingHorizontal="6dp"
-                    app:chipSpacingVertical="0dp"
+                    app:chipSpacingHorizontal="8dp"
+                    app:chipSpacingVertical="4dp"
                     app:selectionRequired="true"
                     app:singleSelection="true" />
 
                 <com.google.android.material.chip.ChipGroup
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:chipSpacingHorizontal="6dp"
-                    app:chipSpacingVertical="0dp">
+                    app:chipSpacingHorizontal="8dp"
+                    app:chipSpacingVertical="4dp">
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chipMotorways"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Glove.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/avoid_motorways" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chipUnpaved"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Glove.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:checked="true"
@@ -304,7 +335,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chipFerries"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Glove.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/avoid_ferries" />
@@ -382,10 +413,12 @@
 
             <Button
                 android:id="@+id/btnStopNav"
-                style="?attr/materialButtonOutlinedStyle"
+                style="@style/Glove.Button.Tonal"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/stop_navigation" />
+                android:layout_height="72dp"
+                android:minWidth="120dp"
+                android:text="@string/stop_navigation"
+                android:textSize="20sp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

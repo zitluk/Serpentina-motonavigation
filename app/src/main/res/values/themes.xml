@@ -4,9 +4,21 @@
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorPrimaryContainer">#FFDAD6</item>
         <item name="colorSecondary">#37474F</item>
+        <!-- Velká tlačítka a volby – ovladatelné v motorkářských rukavicích -->
+        <item name="materialButtonStyle">@style/Glove.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Glove.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Glove.Button.Text</item>
+        <item name="chipStyle">@style/Glove.Chip</item>
+        <item name="materialAlertDialogTheme">@style/Glove.AlertDialog</item>
     </style>
     <style name="Theme.Motonavigace.WithActionBar" parent="Theme.Material3.DayNight">
         <item name="colorPrimary">#E53935</item>
+        <!-- Velká tlačítka a volby – ovladatelné v motorkářských rukavicích -->
+        <item name="materialButtonStyle">@style/Glove.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Glove.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Glove.Button.Text</item>
+        <item name="chipStyle">@style/Glove.Chip</item>
+        <item name="materialAlertDialogTheme">@style/Glove.AlertDialog</item>
     </style>
     <style name="SettingsHeader">
         <item name="android:layout_width">match_parent</item>
@@ -16,5 +28,46 @@
         <item name="android:paddingBottom">4dp</item>
         <item name="android:textAppearance">?attr/textAppearanceTitleSmall</item>
         <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
+    <!-- Výška 64 dp (viditelně 56 dp) a větší písmo; běžná tlačítka mají 48 dp -->
+    <style name="Glove.Button" parent="Widget.Material3.Button">
+        <item name="android:minHeight">64dp</item>
+        <item name="android:insetTop">4dp</item>
+        <item name="android:insetBottom">4dp</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+    </style>
+    <style name="Glove.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">64dp</item>
+        <item name="android:insetTop">4dp</item>
+        <item name="android:insetBottom">4dp</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+    </style>
+    <style name="Glove.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">64dp</item>
+        <item name="android:insetTop">4dp</item>
+        <item name="android:insetBottom">4dp</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+    <style name="Glove.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:minHeight">64dp</item>
+        <item name="android:insetTop">4dp</item>
+        <item name="android:insetBottom">4dp</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+    <style name="Glove.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipMinHeight">48dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="chipStartPadding">12dp</item>
+        <item name="chipEndPadding">12dp</item>
+    </style>
+    <style name="Glove.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="buttonBarPositiveButtonStyle">@style/Glove.Button.Text</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Glove.Button.Text</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Glove.Button.Text</item>
     </style>
 </resources>

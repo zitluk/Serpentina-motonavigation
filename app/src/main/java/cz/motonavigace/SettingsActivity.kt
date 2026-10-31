@@ -60,14 +60,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun choose(title: Int, items: List<String>, checked: Int, onChosen: (Int) -> Unit) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(title)
-            .setSingleChoiceItems(items.toTypedArray(), checked) { dialog, which ->
-                dialog.dismiss()
-                if (which != checked) onChosen(which)
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        GloveMenu.show(this, getString(title), items.mapIndexed { i, text ->
+            GloveMenu.Item(text, checked = i == checked) { if (i != checked) onChosen(i) }
+        })
     }
 
     private fun showAbout() {

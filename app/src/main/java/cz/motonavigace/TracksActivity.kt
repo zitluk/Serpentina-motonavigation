@@ -78,23 +78,12 @@ class TracksActivity : AppCompatActivity() {
     }
 
     private fun showActions(e: TrackLibrary.Entry) {
-        val items = arrayOf(
-            getString(R.string.track_show),
-            getString(R.string.track_navigate),
-            getString(R.string.track_share),
-            getString(R.string.delete),
-        )
-        MaterialAlertDialogBuilder(this)
-            .setTitle(e.title)
-            .setItems(items) { _, which ->
-                when (which) {
-                    0 -> finishWith(ACTION_SHOW, e)
-                    1 -> finishWith(ACTION_NAVIGATE, e)
-                    2 -> share(e)
-                    3 -> confirmDelete(e)
-                }
-            }
-            .show()
+        GloveMenu.show(this, e.title, listOf(
+            GloveMenu.Item(getString(R.string.track_show)) { finishWith(ACTION_SHOW, e) },
+            GloveMenu.Item(getString(R.string.track_navigate)) { finishWith(ACTION_NAVIGATE, e) },
+            GloveMenu.Item(getString(R.string.track_share)) { share(e) },
+            GloveMenu.Item(getString(R.string.delete)) { confirmDelete(e) },
+        ))
     }
 
     private fun share(e: TrackLibrary.Entry) {
