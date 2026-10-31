@@ -25,7 +25,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.view.children
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
@@ -33,8 +32,7 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cz.motonavigace.databinding.ActivityMainBinding
@@ -65,6 +63,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private var roundTripKm: Int? = null
     private var routeJob: Job? = null
     private var route: Route? = null
+    private var routeTypeButtons: List<MaterialButton> = emptyList()
 
     // GPX stopa zobrazená z knihovny
     private var shownTrack: TrackLibrary.Entry? = null
@@ -135,6 +134,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.btnViewMode.setOnClickListener { showViewModeMenu() }
         b.btnZoomIn.setOnClickListener { mapCtl.zoomBy(1) }
         b.btnZoomOut.setOnClickListener { mapCtl.zoomBy(-1) }
+        // Tlačítka přiblížení schováme, když by je zakryl panel trasy – napůl schované se špatně trefují
+        b.root.viewTreeObserver.addOnPreDrawListener { hideCoveredZoomButtons(); true }
         setupRoutePanel()
 
         b.searchText.setOnClickListener { openSearch() }
@@ -261,6 +262,20 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         b.navBanner.updateLayoutParams<ViewGroup.LayoutParams> {
             width = if (wide) (420 * density).toInt() else ViewGroup.LayoutParams.MATCH_PARENT
+        }
+    }
+
+    private fun hideCoveredZoomButtons() {
+        val loc = IntArray(2)
+        b.btnZoomOut.getLocationOnScreen(loc)
+        val zoomBottom = loc[1] + b.btnZoomOut.height
+        val covered = listOf(b.routePanel, b.navPanel).any { panel ->
+            panel.visibility == View.VISIBLE && run { panel.getLocationOnScreen(loc); loc[1] < zoomBottom }
+        }
+        // FAB se musí schovávat přes show()/hide(), přímá změna viditelnosti ho nevykreslí zpátky
+        for (fab in listOf(b.btnZoomIn, b.btnZoomOut)) {
+            if (covered && fab.isOrWillBeShown) fab.hide()
+            else if (!covered && fab.isOrWillBeHidden) fab.show()
         }
     }
 
@@ -413,23 +428,20 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun setupRoutePanel() {
         val saved = prefs.getInt("route_type", RouteType.FASTEST.id)
-        for (type in RouteType.entries) {
-            val chip = Chip(this, null, com.google.android.material.R.attr.chipStyle).apply {
-                id = View.generateViewId()
+        routeTypeButtons = RouteType.entries.map { type ->
+            toggleButton(type.label).apply {
                 tag = type
-                setText(type.label)
-                isCheckable = true
-                isCheckedIconVisible = false
                 isChecked = type.id == saved
+                // Vždy právě jedna vybraná volba – i opakované klepnutí ji nechá zapnutou
+                setOnClickListener { selectRouteType(type); onOptionsChanged() }
             }
-            b.routeTypes.addView(chip)
         }
-        b.routeTypes.setOnCheckedStateChangeListener { _, _ -> onOptionsChanged() }
+        fillGrid(b.routeTypes, routeTypeButtons, columns = 2)
         b.chipMotorways.isChecked = prefs.getBoolean("avoid_motorways", false)
         b.chipUnpaved.isChecked = prefs.getBoolean("avoid_unpaved", true)
         b.chipFerries.isChecked = prefs.getBoolean("avoid_ferries", false)
         listOf(b.chipMotorways, b.chipUnpaved, b.chipFerries).forEach { chip ->
-            chip.setOnCheckedChangeListener { _, _ -> onOptionsChanged() }
+            chip.addOnCheckedChangeListener { _, _ -> onOptionsChanged() }
         }
         b.btnClear.setOnClickListener { clearRoute() }
         b.btnNewLoop.setOnClickListener { roundTripKm?.let(::generateRoundTrip) }
@@ -451,14 +463,34 @@ class MainActivity : AppCompatActivity(), LocationListener {
         prefs.edit { putInt("bike_applied", bike.id) }
         // Při prvním spuštění necháme volby, které si jezdec už nastavil
         if (applied == -1) return
-        b.routeTypes.children.filterIsInstance<Chip>().firstOrNull { it.tag == bike.routeType }?.isChecked = true
+        selectRouteType(bike.routeType)
         b.chipMotorways.isChecked = bike.avoidMotorways
         b.chipUnpaved.isChecked = bike.avoidUnpaved
     }
 
-    private fun selectedRouteType(): RouteType {
-        val chip = b.routeTypes.findViewById<Chip>(b.routeTypes.checkedChipId)
-        return chip?.tag as? RouteType ?: RouteType.FASTEST
+    private fun selectedRouteType(): RouteType =
+        routeTypeButtons.firstOrNull { it.isChecked }?.tag as? RouteType ?: RouteType.FASTEST
+
+    private fun selectRouteType(type: RouteType) = routeTypeButtons.forEach { it.isChecked = it.tag == type }
+
+    private fun toggleButton(text: Int): MaterialButton =
+        (layoutInflater.inflate(R.layout.item_toggle, null, false) as MaterialButton).apply { setText(text) }
+
+    /** Tlačítka v mřížce se stejně širokými sloupci – zarovnaná do bloku, poslední řádek se roztáhne. */
+    private fun fillGrid(grid: LinearLayout, buttons: List<View>, columns: Int) {
+        val gap = (8 * resources.displayMetrics.density).toInt()
+        grid.removeAllViews()
+        buttons.chunked(columns).forEachIndexed { r, rowItems ->
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            rowItems.forEachIndexed { i, v ->
+                row.addView(v, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    if (i > 0) marginStart = gap
+                })
+            }
+            grid.addView(row, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                if (r > 0) topMargin = gap / 2
+            })
+        }
     }
 
     private fun options() = RouteOptions(
@@ -615,15 +647,14 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         update()
         slider.addOnChangeListener { _, _, _ -> update() }
-        val presets = ChipGroup(this).apply {
-            isSingleLine = false
-            for (km in listOf(30, 50, 100, 150, 200, 300)) {
-                addView(Chip(this@MainActivity).apply {
-                    text = "$km km"
-                    setOnClickListener { slider.value = km.toFloat() }
-                })
+        val presets = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        fillGrid(presets, listOf(30, 50, 100, 150, 200, 300).map { km ->
+            toggleButton(R.string.app_name).apply {
+                text = "$km km"
+                isCheckable = false
+                setOnClickListener { slider.value = km.toFloat() }
             }
-        }
+        }, columns = 3)
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val pad = (24 * density).toInt()

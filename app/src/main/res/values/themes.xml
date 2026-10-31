@@ -70,4 +70,48 @@
         <item name="buttonBarNegativeButtonStyle">@style/Glove.Button.Text</item>
         <item name="buttonBarNeutralButtonStyle">@style/Glove.Button.Text</item>
     </style>
+    <!-- Přepínací volba do mřížky: stejně široké buňky, vybraná plnou barvou -->
+    <style name="Glove.Toggle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">64dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:insetTop">3dp</item>
+        <item name="android:insetBottom">3dp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:checkable">true</item>
+        <item name="backgroundTint">@color/glove_toggle_bg</item>
+        <item name="android:textColor">@color/glove_toggle_text</item>
+        <item name="strokeColor">?attr/colorPrimary</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">12dp</item>
+    </style>
+    <!-- Akční tlačítka pod volbami: stejný tvar a výška jako mřížka voleb -->
+    <style name="Glove.Action" parent="Widget.Material3.Button">
+        <item name="android:minHeight">64dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:insetTop">3dp</item>
+        <item name="android:insetBottom">3dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="cornerRadius">12dp</item>
+    </style>
+    <style name="Glove.Action.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">64dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:insetTop">3dp</item>
+        <item name="android:insetBottom">3dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="strokeColor">?attr/colorPrimary</item>
+        <item name="strokeWidth">2dp</item>
+    </style>
 </resources>

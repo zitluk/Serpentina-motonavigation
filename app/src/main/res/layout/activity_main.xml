@@ -18,43 +18,52 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:id="@+id/searchBar"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
-            app:cardCornerRadius="32dp"
-            app:cardElevation="4dp">
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+            <!-- Menu jako samostatné velké tlačítko – trefí se i v rukavici -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMenu"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:contentDescription="@string/menu"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                app:cornerRadius="20dp"
+                app:elevation="4dp"
+                app:icon="@drawable/ic_menu"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="40dp" />
 
-                <ImageButton
-                    android:id="@+id/btnMenu"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:layout_marginStart="4dp"
-                    android:scaleType="center"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/menu"
-                    android:src="@drawable/ic_menu" />
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="72dp"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="4dp">
 
                 <TextView
                     android:id="@+id/searchText"
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_weight="1"
                     android:background="?attr/selectableItemBackground"
-                    android:drawablePadding="8dp"
+                    android:drawablePadding="12dp"
                     android:gravity="center_vertical"
-                    android:paddingHorizontal="8dp"
+                    android:paddingHorizontal="16dp"
                     android:text="@string/search_bar"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textSize="20sp"
                     app:drawableStartCompat="@drawable/ic_search" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/navBanner"
@@ -301,76 +310,83 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
-                <!-- Volby se zalamují na další řádek, takže jsou vidět všechny na jakékoli šířce -->
-                <com.google.android.material.chip.ChipGroup
+                <!-- Typy trasy v mřížce o dvou sloupcích (plní MainActivity), zarovnané do bloku -->
+                <LinearLayout
                     android:id="@+id/routeTypes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    app:chipSpacingHorizontal="8dp"
-                    app:chipSpacingVertical="4dp"
-                    app:selectionRequired="true"
-                    app:singleSelection="true" />
+                    android:orientation="vertical" />
 
-                <com.google.android.material.chip.ChipGroup
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:chipSpacingHorizontal="8dp"
-                    app:chipSpacingVertical="4dp">
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
 
-                    <com.google.android.material.chip.Chip
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipMotorways"
-                        style="@style/Glove.Chip"
-                        android:layout_width="wrap_content"
+                        style="@style/Glove.Toggle"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:text="@string/avoid_motorways" />
 
-                    <com.google.android.material.chip.Chip
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipUnpaved"
-                        style="@style/Glove.Chip"
-                        android:layout_width="wrap_content"
+                        style="@style/Glove.Toggle"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
                         android:checked="true"
                         android:text="@string/avoid_unpaved" />
 
-                    <com.google.android.material.chip.Chip
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipFerries"
-                        style="@style/Glove.Chip"
-                        android:layout_width="wrap_content"
+                        style="@style/Glove.Toggle"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
                         android:text="@string/avoid_ferries" />
-                </com.google.android.material.chip.ChipGroup>
+                </LinearLayout>
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/routeButtons"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical|end"
+                android:layout_marginTop="8dp"
                 android:orientation="horizontal"
                 android:visibility="gone">
 
                 <Button
                     android:id="@+id/btnReverse"
-                    style="?attr/borderlessButtonStyle"
-                    android:layout_width="wrap_content"
+                    style="@style/Glove.Action.Outlined"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/reverse_route" />
 
                 <Button
                     android:id="@+id/btnClear"
-                    style="?attr/borderlessButtonStyle"
-                    android:layout_width="wrap_content"
+                    style="@style/Glove.Action.Outlined"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
                     android:text="@string/clear_route" />
 
                 <Button
                     android:id="@+id/btnNavigate"
-                    android:layout_width="wrap_content"
+                    style="@style/Glove.Action"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
                     android:enabled="false"
-                    android:text="@string/navigate"
-                    app:icon="@drawable/ic_navigation" />
+                    android:text="@string/navigate" />
             </LinearLayout>
         </LinearLayout>
         </androidx.core.widget.NestedScrollView>
