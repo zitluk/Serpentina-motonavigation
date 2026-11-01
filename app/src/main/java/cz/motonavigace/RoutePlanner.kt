@@ -116,6 +116,8 @@ object RoutePlanner {
                     "avoid_motorways" to options.avoidMotorways.flag(),
                     "avoid_unpaved" to options.avoidUnpaved.flag(),
                     "avoid_ferries" to options.avoidFerries.flag(),
+                    // Okruh vede jen po silnicích – bez účelových komunikací a obytných zón
+                    "round_trip" to looseWaypoints.flag(),
                 )
                 turnInstructionMode = TURN_INSTRUCTION_MODE
                 useDynamicDistance = looseWaypoints

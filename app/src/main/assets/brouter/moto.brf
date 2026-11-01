@@ -24,6 +24,7 @@ assign route_type       = 0      # %route_type% | 0=nejrychlejší 1=nejkratší
 assign avoid_motorways  = false  # %avoid_motorways% | Vyhnout se dálnicím | boolean
 assign avoid_unpaved    = true   # %avoid_unpaved% | Vyhnout se nezpevněným cestám | boolean
 assign avoid_ferries    = false  # %avoid_ferries% | Vyhnout se trajektům | boolean
+assign round_trip       = false  # %round_trip% | Projížďka: průjezdní body jen na silnicích, ne na účelových | boolean
 
 assign add_beeline          = false
 assign turnInstructionMode  = 1
@@ -71,6 +72,18 @@ assign motorcycleaccess
 assign accesspenalty
        switch motorcycleaccess 0 10000
 
+# Výslovně povolený vjezd motorovým vozidlům (polní a lesní cesty bez něj jsou v ČR
+# obvykle za zákazem vjezdu, do lesa je vjezd zakázaný ze zákona)
+assign explicitmotoraccess
+       or or motorcycle=yes|designated motor_vehicle=yes|designated
+          or vehicle=yes|designated access=yes|designated
+
+# „Dopravní obsluze vjezd povolen“ – projet se tudy nesmí, jen dojet do cíle
+assign isdestination
+       and not or motorcycle=yes|designated motor_vehicle=yes|designated
+           or or access=destination vehicle=destination
+              or motor_vehicle=destination motorcycle=destination
+
 assign onewaypenalty
        switch switch reversedirection=yes
                      switch oneway=
@@ -109,6 +122,8 @@ assign costfactor
 
  add max max onewaypenalty accesspenalty motorwaypenalty
 
+ add switch isdestination 10 0
+
  add unpavedpenalty
 
  add switch islinktype 0.05 0
@@ -122,9 +137,12 @@ assign costfactor
  switch or highway=tertiary highway=tertiary_link    c_tertiary
  switch    highway=unclassified                      c_unclassified
  switch    route=ferry                               5.67
- switch    isresidentialorliving                     c_residential
- switch    highway=service                           c_service
+ switch    isresidentialorliving
+  switch and round_trip or highway=living_street living_street=yes 10000 c_residential
+ switch    highway=service
+  switch round_trip 10000 c_service
  switch    highway=track
+  switch not explicitmotoraccess 10000
   switch tracktype=grade1 5
   switch ispaved 5
   30
