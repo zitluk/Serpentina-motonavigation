@@ -55,3 +55,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 ## Data a licence
 
 Mapy: Mapsforge, data © přispěvatelé [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL). Trasy: [BRouter](https://github.com/abrensch/brouter) (MIT). Loga výrobců jsou ochranné známky svých vlastníků a slouží jen k označení motocyklu; zdroje a licence jsou v [LOGOS.md](LOGOS.md).
+
+## Autoři
+
+© 2026 **Tutenservis.cz** – zadání, testování a vydávání. Aplikaci programuje AI **Claude** (Anthropic).
