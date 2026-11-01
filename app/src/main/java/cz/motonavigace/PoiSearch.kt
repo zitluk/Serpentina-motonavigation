@@ -6,7 +6,9 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import org.mapsforge.core.model.LatLong
 import java.text.Normalizer
+import java.util.Locale
 import kotlin.coroutines.coroutineContext
+import kotlin.math.cos
 
 data class Place(
     val name: String,
@@ -31,6 +33,8 @@ enum class PoiCategory(val label: Int, val amenities: Set<String>) {
 object PoiSearch {
     private const val CANDIDATES_PER_FILE = 400
     private const val MAX_RESULTS = 50
+    /** Stejné jméno i druh blíž než tohle (m) je tentýž cíl – třeba zastávka pro oba směry. */
+    private const val DUPLICATE_METERS = 1000.0
 
     private val coordinates = Regex("""^\s*(-?\d{1,2}(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d{1,3}(?:[.,]\d+)?)\s*$""")
 
@@ -49,6 +53,12 @@ object PoiSearch {
                 SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS)
             }.getOrNull() ?: continue
             val pattern = "%normalized_name=%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            // Kandidáti od nejbližších – jinak by LIMIT vzal libovolné a nejbližší pobočka mohla chybět
+            val order = near?.let {
+                val k = cos(Math.toRadians(it.latitude))
+                " ORDER BY (i.lat - ${it.latitude}) * (i.lat - ${it.latitude}) + " +
+                    "(i.lon - ${it.longitude}) * (i.lon - ${it.longitude}) * ${k * k}"
+            }.orEmpty()
             // Obce zvlášť, aby je v LIMITu nepřebily tisíce zastávek a obchodů se stejným jménem
             val queries = listOf(
                 "d.data LIKE ? ESCAPE '\\' AND d.data LIKE '%place=%'",
@@ -57,7 +67,7 @@ object PoiSearch {
             db.use { for (where in queries) {
                 it.rawQuery(
                     "SELECT i.lat, i.lon, d.data FROM poi_data d JOIN poi_index i ON i.id = d.id " +
-                        "WHERE $where LIMIT $CANDIDATES_PER_FILE",
+                        "WHERE $where$order LIMIT $CANDIDATES_PER_FILE",
                     arrayOf(pattern),
                 ).use { c ->
                     while (c.moveToNext()) {
@@ -76,11 +86,26 @@ object PoiSearch {
                 }
             } }
         }
-        found
-            .sortedWith(compareBy({ it.first }, { it.second.distance ?: 0.0 }))
-            .map { it.second }
-            .distinctBy { it.name to it.description }
-            .take(MAX_RESULTS)
+        dedupeNearby(
+            found
+                .sortedWith(compareBy({ it.first }, { it.second.distance ?: 0.0 }))
+                .map { it.second }
+        ).take(MAX_RESULTS)
+    }
+
+    /**
+     * Stejnojmenné obce (v ČR třeba 36× Nová Ves) se nesmí slít v jednu – slučujeme jen
+     * stejné jméno i druh blíž než [DUPLICATE_METERS].
+     */
+    internal fun dedupeNearby(places: List<Place>): List<Place> {
+        val kept = mutableListOf<Place>()
+        for (p in places) {
+            val duplicate = kept.any {
+                it.name == p.name && it.description == p.description && it.position.sphericalDistance(p.position) < DUPLICATE_METERS
+            }
+            if (!duplicate) kept += p
+        }
+        return kept
     }
 
     /** Okruhy hledání v metrech – rozšiřují se, dokud není dost výsledků. */
@@ -134,8 +159,12 @@ object PoiSearch {
         if (eq > 0) it.substring(0, eq) to it.substring(eq + 1) else null
     }.toMap()
 
-    /** Nižší = lepší. Obce mají přednost před ostatními body, přesná shoda před částečnou. */
-    private fun score(tags: Map<String, String>, normalized: String, q: String): Int {
+    /**
+     * Nižší = lepší. Přesná shoda před začátkem jména a ten před shodou uvnitř. Obce a města
+     * mají přednost před ostatními body i jen se shodou začátku („Hradec“ → Hradec Králové
+     * před zastávkou Hradec), ostatní body ale před obcemi jen podobnými (Lidl před Lídlovými Dvory).
+     */
+    internal fun score(tags: Map<String, String>, normalized: String, q: String): Int {
         val match = when {
             normalized == q -> 0
             normalized.startsWith(q) -> 10
@@ -146,7 +175,7 @@ object PoiSearch {
             "town" -> 1
             "village" -> 2
             "suburb", "hamlet", "quarter", "neighbourhood", "locality", "isolated_dwelling" -> 3
-            else -> 5
+            else -> 12
         }
         return match + kind
     }
@@ -155,7 +184,7 @@ object PoiSearch {
         val en = Settings.isEnglish()
         fun t(cs: String, english: String) = if (en) english else cs
         fun label(map: Map<String, Pair<String, String>>, key: String) = map[key]?.let { if (en) it.second else it.first }
-        tags["place"]?.let { return label(PLACES, it) ?: t("Místo", "Place") }
+        tags["place"]?.let { return listOfNotNull(label(PLACES, it) ?: t("Místo", "Place"), placeQualifier(tags)).joinToString(" · ") }
         tags["amenity"]?.let { a -> label(AMENITIES, a)?.let { return it } }
         tags["tourism"]?.let { x -> label(TOURISM, x)?.let { return it } }
         if (tags["natural"] == "peak") return listOfNotNull(t("Vrchol", "Peak"), tags["ele"]?.let { "$it m" }).joinToString(" · ")
@@ -165,12 +194,24 @@ object PoiSearch {
         return tags["amenity"] ?: tags["tourism"] ?: tags["historic"] ?: tags["leisure"] ?: t("Bod zájmu", "Point of interest")
     }
 
+    /**
+     * Upřesnění obce z odkazu na Wikipedii, ať jdou stejnojmenné obce rozlišit:
+     * „cs:Nová Ves (okres České Budějovice)“ → „okres České Budějovice“.
+     */
+    internal fun placeQualifier(tags: Map<String, String>): String? {
+        val title = tags["wikipedia"]?.substringAfter(':') ?: return null
+        val name = tags["name"] ?: return null
+        if (!title.startsWith("$name (") || !title.endsWith(")")) return null
+        return title.substring(name.length + 2, title.length - 1).takeIf { it.isNotBlank() }
+    }
+
     private fun parseCoordinates(query: String): Place? {
         val m = coordinates.matchEntire(query) ?: return null
         val lat = m.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return null
         val lon = m.groupValues[2].replace(',', '.').toDoubleOrNull() ?: return null
         if (lat !in -90.0..90.0 || lon !in -180.0..180.0) return null
-        return Place("%.5f, %.5f".format(lat, lon), if (Settings.isEnglish()) "Coordinates" else "Souřadnice", LatLong(lat, lon), null)
+        // Desetinná tečka i v češtině – s čárkou by „49,19000, 16,61000“ splývalo s oddělovačem
+        return Place(String.format(Locale.US, "%.5f, %.5f", lat, lon), if (Settings.isEnglish()) "Coordinates" else "Souřadnice", LatLong(lat, lon), null)
     }
 
     /** OSM hodnota → (česky, anglicky). */
@@ -193,6 +234,7 @@ object PoiSearch {
         "hotel" to ("Hotel" to "Hotel"), "motel" to ("Motel" to "Motel"), "guest_house" to ("Penzion" to "Guest house"),
         "camp_site" to ("Kemp" to "Campsite"), "attraction" to ("Turistická atrakce" to "Attraction"),
         "viewpoint" to ("Vyhlídka" to "Viewpoint"), "museum" to ("Muzeum" to "Museum"),
+        "artwork" to ("Umělecké dílo" to "Artwork"),
         "information" to ("Turistické informace" to "Tourist information"), "hostel" to ("Hostel" to "Hostel"),
     )
 }

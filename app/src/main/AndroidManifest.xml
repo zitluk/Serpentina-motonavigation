@@ -20,7 +20,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Motonavigace.Starting"
+            android:theme="@style/Theme.Motonavigace.Launch"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:launchMode="singleTask">
             <!-- Otevření .gpx ze správce souborů nebo z e-mailu -->
@@ -37,12 +37,99 @@
 
         <!-- Ikona v launcheru: výchozí logo, nebo ikona výrobce zvoleného v Nastavení.
              Zapnutý je vždy jen jeden alias (Settings.applyLauncherIcon). -->
+        <!-- Spouštěcí aktivity, jedna na ikonu: jen předají řízení MainActivity. Systém podle
+             jejich stylu nakreslí úvodní obrazovku s logem výrobce (Android 8–11 jinak neumí). -->
+        <activity
+            android:name=".StartDefault"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting" />
+        <activity
+            android:name=".StartAprilia"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Aprilia" />
+        <activity
+            android:name=".StartBenelli"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Benelli" />
+        <activity
+            android:name=".StartBmw"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Bmw" />
+        <activity
+            android:name=".StartCfmoto"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Cfmoto" />
+        <activity
+            android:name=".StartDucati"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Ducati" />
+        <activity
+            android:name=".StartHarleyDavidson"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.HarleyDavidson" />
+        <activity
+            android:name=".StartHonda"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Honda" />
+        <activity
+            android:name=".StartHusqvarna"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Husqvarna" />
+        <activity
+            android:name=".StartIndian"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Indian" />
+        <activity
+            android:name=".StartJawa"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Jawa" />
+        <activity
+            android:name=".StartKawasaki"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Kawasaki" />
+        <activity
+            android:name=".StartKtm"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Ktm" />
+        <activity
+            android:name=".StartMotoGuzzi"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.MotoGuzzi" />
+        <activity
+            android:name=".StartMvAgusta"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.MvAgusta" />
+        <activity
+            android:name=".StartPiaggio"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Piaggio" />
+        <activity
+            android:name=".StartRoyalEnfield"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.RoyalEnfield" />
+        <activity
+            android:name=".StartSuzuki"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Suzuki" />
+        <activity
+            android:name=".StartTriumph"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Triumph" />
+        <activity
+            android:name=".StartVespa"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Vespa" />
+        <activity
+            android:name=".StartYamaha"
+            android:exported="false"
+            android:theme="@style/Theme.Motonavigace.Starting.Yamaha" />
+
         <activity-alias
             android:name=".LauncherDefault"
             android:enabled="true"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartDefault">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -54,7 +141,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_aprilia"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartAprilia">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -66,7 +153,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_benelli"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartBenelli">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -78,7 +165,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_bmw"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartBmw">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -90,7 +177,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_cfmoto"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartCfmoto">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -102,7 +189,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_ducati"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartDucati">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -114,7 +201,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_harley_davidson"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartHarleyDavidson">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -126,7 +213,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_honda"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartHonda">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -138,7 +225,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_husqvarna"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartHusqvarna">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -150,7 +237,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_indian"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartIndian">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -162,7 +249,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_jawa"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartJawa">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -174,7 +261,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_kawasaki"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartKawasaki">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -186,7 +273,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_ktm"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartKtm">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -198,7 +285,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_moto_guzzi"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartMotoGuzzi">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -210,7 +297,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_mv_agusta"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartMvAgusta">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -222,7 +309,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_piaggio"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartPiaggio">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -234,7 +321,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_royal_enfield"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartRoyalEnfield">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -246,7 +333,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_suzuki"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartSuzuki">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -258,7 +345,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_triumph"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartTriumph">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -270,7 +357,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_vespa"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartVespa">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -282,7 +369,7 @@
             android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher_yamaha"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".StartYamaha">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

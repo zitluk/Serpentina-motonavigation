@@ -20,6 +20,8 @@
     <string name="hint_need_end">Long-press the map to set the destination.</string>
     <string name="location_denied">Without location permission you won\'t see your position on the map.</string>
     <string name="waiting_for_gps">Waiting for GPS…</string>
+    <string name="waiting_for_precise_location">Please wait for a precise location…</string>
+    <string name="waiting_for_precise_location_accuracy">Please wait for a precise location (±%1$d m)…</string>
     <string name="downloaded">Downloaded</string>
     <string name="not_downloaded">Not downloaded</string>
     <string name="map_version">Map version: %1$s</string>
@@ -152,7 +154,7 @@
     <string name="feedback_bad_email">This doesn\'t look like an e-mail address</string>
     <string name="feedback_sent">Thank you, your message has been sent</string>
     <string name="feedback_failed">The message could not be sent: %1$s. Please check your internet connection.</string>
-    <string name="settings_donate">Support development</string>
+    <string name="settings_donate">Every little bit of support helps</string>
     <string name="donate_account">CZ71 5500 0000 0016 4758 7003</string>
     <string name="donate_summary">IBAN %1$s, payment reference: Serpentina. Scan the QR code in your banking app or tap to copy the IBAN. Thank you!</string>
     <string name="donate_copied">IBAN copied</string>

@@ -7,6 +7,13 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/launcher_bg</item>
     </style>
+    <!-- Styl z manifestu: na Androidu 8–11 ho systém kreslí hned po ťuknutí na ikonu, ještě
+         než aplikace zjistí zvoleného výrobce. Proto jen pozadí bez loga – logo výrobce
+         dokreslí MainActivity stylem Theme.Motonavigace.Starting.* -->
+    <style name="Theme.Motonavigace.Launch" parent="Theme.Motonavigace.Starting">
+        <item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    </style>
     <style name="Theme.Motonavigace.Starting.Aprilia">
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_aprilia</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/logo_icon_bg</item>

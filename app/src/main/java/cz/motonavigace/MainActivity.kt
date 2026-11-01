@@ -55,7 +55,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private lateinit var mapCtl: MapController
 
     private var lastLocation: Location? = null
-    private var followOnFirstFix = true
+    /** Mapa se ještě má vycentrovat na polohu – až na dost přesnou (do [PRECISE_ACCURACY]). */
+    private var waitingForFix = false
+    private val stopWaitingForFix = Runnable { lastLocation?.takeIf(::isFresh)?.let { centerOnFix(it) } }
     /** Při spuštění aplikace se po první nové poloze zeptáme, zda navigovat k zaparkované motorce. */
     private var askForBike = false
     /** Okamžik spuštění – poslední známá poloha z doby před ním může být ještě u motorky. */
@@ -143,6 +145,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         onBackPressedDispatcher.addCallback(this, stopNavigationOnBack)
 
         mapCtl = MapController(this, b.mapView, ::onMapLongPress)
+        // Kdo si mapu posunul sám, tomu ji poloha nepřetahuje
+        mapCtl.onUserMove = { runOnUiThread { cancelWaitingForFix() } }
         applyWindowInsets()
         restoreMapPosition()
         // Naklonění jde nastavit, až mapa zná svou velikost
@@ -160,10 +164,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.btnNoMapsDownload.setOnClickListener { openDownloads() }
         b.btnLocation.setOnClickListener {
             val loc = lastLocation
-            if (loc != null) mapCtl.moveTo(LatLong(loc.latitude, loc.longitude))
+            if (loc != null && isFresh(loc) && loc.accuracy <= PRECISE_ACCURACY) centerOnFix(loc)
             else {
-                followOnFirstFix = true
-                Toast.makeText(this, R.string.waiting_for_gps, Toast.LENGTH_SHORT).show()
+                startWaitingForFix()
                 requestLocation()
             }
         }
@@ -186,6 +189,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         RecordingService.recoverUnfinished()?.let { TrackLibrary.lastRecorded = it }
 
         askForBike = savedInstanceState == null && bikePosition() != null
+        // Po spuštění mapu vycentrujeme na polohu, jen ne po otočení obrazovky
+        if (savedInstanceState == null) startWaitingForFix()
         requestLocation()
         if (savedInstanceState != null) restoreWaypoints(savedInstanceState)
         handleIntent(intent)
@@ -251,6 +256,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     override fun onDestroy() {
+        b.root.removeCallbacks(stopWaitingForFix)
         getSystemService(LocationManager::class.java).removeUpdates(this)
         tts?.shutdown()
         mapCtl.onDestroy()
@@ -381,6 +387,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     /** Vejde body do části mapy, kterou nezakrývá horní lišta ani spodní panel. */
     private fun zoomToPoints(points: List<LatLong>) {
         if (points.size < 2) return
+        cancelWaitingForFix()
         // Až po rozvržení (těsně před vykreslením), ať známe skutečnou výšku panelu
         // i s právě přidanými tlačítky variant
         b.root.requestLayout()
@@ -465,17 +472,43 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         navigator?.let { onNavigationFix(it, location, pos); return }
 
-        // Na starou uloženou polohu (třeba z minulého dne) mapu necentrujeme
-        val fresh = System.currentTimeMillis() - location.time < 2 * 60_000
-        if (followOnFirstFix && fresh) {
-            followOnFirstFix = false
-            mapCtl.moveTo(pos, zoom = if (mapCtl.zoomLevel < 12) 14 else null)
+        // Na starou uloženou ani nepřesnou polohu mapu necentrujeme – poskakovala by
+        if (waitingForFix && isFresh(location)) {
+            if (location.accuracy <= PRECISE_ACCURACY) centerOnFix(location)
+            else b.gpsChip.text = getString(R.string.waiting_for_precise_location_accuracy, location.accuracy.roundToInt())
         }
         // Rozhodujeme až podle dost přesné polohy změřené po spuštění
         if (askForBike && location.elapsedRealtimeNanos >= launchedAtNanos && location.accuracy <= BIKE_FIX_ACCURACY) {
             askForBike = false
             offerNavigationToBike(location, pos)
         }
+    }
+
+    // ---------------------------------------------------------------- vycentrování na polohu
+
+    private fun isFresh(location: Location) = System.currentTimeMillis() - location.time < 2 * 60_000
+
+    /** Počká na přesnou polohu; když nepřijde do [PRECISE_TIMEOUT_MS], vezme nejlepší čerstvou. */
+    private fun startWaitingForFix() {
+        waitingForFix = true
+        b.gpsChip.setText(R.string.waiting_for_precise_location)
+        b.gpsWaiting.visibility = View.VISIBLE
+        b.root.removeCallbacks(stopWaitingForFix)
+        b.root.postDelayed(stopWaitingForFix, PRECISE_TIMEOUT_MS)
+    }
+
+    private fun cancelWaitingForFix() {
+        if (!waitingForFix) return
+        waitingForFix = false
+        b.gpsWaiting.visibility = View.GONE
+        b.root.removeCallbacks(stopWaitingForFix)
+    }
+
+    /** Poloha doprostřed mapy; s otevřeným panelem trasy doprostřed volné plochy nad ním. */
+    private fun centerOnFix(location: Location) {
+        cancelWaitingForFix()
+        if (b.routePanel.visibility != View.VISIBLE) mapCtl.resetViewCenter()
+        mapCtl.moveTo(LatLong(location.latitude, location.longitude), zoom = if (mapCtl.zoomLevel < 12) 14 else null)
     }
 
     // ---------------------------------------------------------------- zaparkovaná motorka
@@ -581,9 +614,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val gap = (8 * resources.displayMetrics.density).toInt()
         grid.removeAllViews()
         buttons.chunked(columns).forEachIndexed { r, rowItems ->
-            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            // Bez zarovnání podle účaří: tlačítko se zalomeným textem by jinak sjelo níž.
+            // Stejná výška celé řady, i když se text zalomí jen v jednom tlačítku.
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; isBaselineAligned = false }
             rowItems.forEachIndexed { i, v ->
-                row.addView(v, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
+                row.addView(v, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
                     if (i > 0) marginStart = gap
                 })
             }
@@ -663,6 +698,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun onWaypointsChanged(zoomWhenDone: Boolean = false, onDone: (Route) -> Unit = {}) {
+        // Kdo plánuje trasu, chce ji vidět – mapa už na polohu sama neskočí
+        cancelWaitingForFix()
         refreshPins()
         b.destinationName.text = destinationName
         b.destinationName.visibility = if (destinationName != null) View.VISIBLE else View.GONE
@@ -957,6 +994,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             return
         }
         val here = LatLong(loc.latitude, loc.longitude)
+        cancelWaitingForFix()
         setNavigationUi(true)
         // K zaparkované motorce se jde pěšky
         setWalking(end != null && end == bikePosition())
@@ -1110,5 +1148,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
         const val BIKE_NEAR_METERS = 20.0
         /** Nejhorší přesnost polohy (m), podle které se ještě rozhodujeme o dotazu na motorku. */
         const val BIKE_FIX_ACCURACY = 30f
+        /** Přesnost polohy (m), na kterou se mapa vycentruje. */
+        const val PRECISE_ACCURACY = 30f
+        /** Jak dlouho nejvýš čekat na přesnou polohu, než se vezme nejlepší dostupná. */
+        const val PRECISE_TIMEOUT_MS = 20_000L
     }
 }

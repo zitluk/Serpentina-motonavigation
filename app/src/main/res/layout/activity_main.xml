@@ -129,19 +129,51 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp">
 
-            <!-- Indikátor probíhajícího záznamu jízdy -->
-            <com.google.android.material.chip.Chip
-                android:id="@+id/recChip"
+            <!-- Vpravo je sloupec tlačítek, štítky do něj nesmí zasahovat -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="start|top"
-                android:textColor="#FFFFFF"
-                android:visibility="gone"
-                app:chipMinHeight="48dp"
-                app:chipBackgroundColor="#C62828"
-                app:chipIcon="@drawable/ic_record"
-                app:chipIconSize="12dp"
-                app:chipIconTint="#FFFFFF" />
+                android:layout_marginEnd="84dp"
+                android:orientation="vertical">
+
+                <!-- Indikátor probíhajícího záznamu jízdy -->
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/recChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone"
+                    app:chipMinHeight="48dp"
+                    app:chipBackgroundColor="#C62828"
+                    app:chipIcon="@drawable/ic_record"
+                    app:chipIconSize="12dp"
+                    app:chipIconTint="#FFFFFF" />
+
+                <!-- Mapa se vycentruje až na přesnou polohu; do té doby čekáme.
+                     Karta místo čipu, ať se delší text zalomí místo useknutí. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/gpsWaiting"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp">
+
+                    <TextView
+                        android:id="@+id/gpsChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:drawablePadding="8dp"
+                        android:gravity="center_vertical"
+                        android:minHeight="48dp"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="6dp"
+                        android:text="@string/waiting_for_precise_location"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        app:drawableStartCompat="@drawable/ic_my_location" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/fabs"
@@ -347,13 +379,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:baselineAligned="false"
                     android:orientation="horizontal">
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipMotorways"
                         style="@style/Glove.Toggle"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_weight="1"
                         android:text="@string/avoid_motorways" />
 
@@ -361,7 +394,7 @@
                         android:id="@+id/chipUnpaved"
                         style="@style/Glove.Toggle"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:checked="true"
@@ -371,7 +404,7 @@
                         android:id="@+id/chipFerries"
                         style="@style/Glove.Toggle"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:text="@string/avoid_ferries" />
@@ -383,6 +416,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
+                android:baselineAligned="false"
                 android:orientation="horizontal"
                 android:visibility="gone">
 
@@ -390,7 +424,7 @@
                     android:id="@+id/btnReverse"
                     style="@style/Glove.Action.Outlined"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:text="@string/reverse_route" />
 
@@ -398,7 +432,7 @@
                     android:id="@+id/btnClear"
                     style="@style/Glove.Action.Outlined"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:text="@string/clear_route" />
@@ -407,7 +441,7 @@
                     android:id="@+id/btnNavigate"
                     style="@style/Glove.Action"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:enabled="false"

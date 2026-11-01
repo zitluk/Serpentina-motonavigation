@@ -2,7 +2,7 @@
     <string name="app_name" translatable="false">Serpentina</string>
     <!-- Plný název – pod ikonou by se nevešel, proto jen v O aplikaci a v obchodě -->
     <string name="app_full_name" translatable="false">Serpentina-motonavigation</string>
-    <string name="copyright" translatable="false">© 2026 Zitluk</string>
+    <string name="copyright" translatable="false">© 2026 Tutenservis.cz</string>
     <string name="offline_data">Stažení map</string>
     <string name="my_location">Moje poloha</string>
     <string name="no_maps">Zatím nemáš žádnou offline mapu.</string>
@@ -23,6 +23,8 @@
     <string name="hint_need_end">Nastav cíl dlouhým stiskem do mapy.</string>
     <string name="location_denied">Bez oprávnění k poloze neuvidíš svou pozici na mapě.</string>
     <string name="waiting_for_gps">Čekám na GPS…</string>
+    <string name="waiting_for_precise_location">Prosím počkejte na přesnou polohu…</string>
+    <string name="waiting_for_precise_location_accuracy">Prosím počkejte na přesnou polohu (±%1$d m)…</string>
     <string name="downloaded">Staženo</string>
     <string name="not_downloaded">Nestaženo</string>
     <string name="map_version">Verze mapy: %1$s</string>
@@ -155,7 +157,7 @@
     <string name="feedback_bad_email">Tohle nevypadá jako e-mail</string>
     <string name="feedback_sent">Děkuji, zpráva odešla</string>
     <string name="feedback_failed">Zprávu se nepodařilo odeslat: %1$s. Zkontrolujte připojení k internetu.</string>
-    <string name="settings_donate">Přispět na vývoj</string>
+    <string name="settings_donate">I drobná podpora potěší</string>
     <string name="donate_account">1647587003/5500</string>
     <string name="donate_summary">Účet %1$s, zpráva pro příjemce: Serpentina. Naskenujte QR kód v bankovní aplikaci, nebo ťuknutím zkopírujte číslo účtu. Děkuji!</string>
     <string name="donate_copied">Číslo účtu zkopírováno</string>

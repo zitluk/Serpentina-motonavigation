@@ -3,4 +3,5 @@
     <!-- Android 12+: úvodní obrazovku kreslí systém z ikony spouštěcího aliasu (logo výrobce).
          Styl knihovny by ikonu přepsal pevnou ikonou, proto tu jen běžné téma aplikace. -->
     <style name="Theme.Motonavigace.Starting" parent="Theme.Motonavigace" />
+    <style name="Theme.Motonavigace.Launch" parent="Theme.Motonavigace" />
 </resources>

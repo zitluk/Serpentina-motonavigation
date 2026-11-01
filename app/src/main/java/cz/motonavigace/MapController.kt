@@ -81,9 +81,17 @@ class MapController(
 
     private lateinit var scaleLayer: MapScaleBarLayer
 
+    /** Uživatel mapu posunul, přiblížil nebo otočil prstem (ne animace z kódu). */
+    var onUserMove: (() -> Unit)? = null
+
     init {
         map.viewport().setMinZoomLevel(4)
         map.viewport().setMaxZoomLevel(20)
+        map.events.bind(org.oscim.map.Map.UpdateListener { e, _ ->
+            if (e == org.oscim.map.Map.MOVE_EVENT || e == org.oscim.map.Map.SCALE_EVENT ||
+                e == org.oscim.map.Map.ROTATE_EVENT || e == org.oscim.map.Map.TILT_EVENT
+            ) onUserMove?.invoke()
+        })
 
         val layers = map.layers()
         layers.add(LongPressLayer(onLongPress))
