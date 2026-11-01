@@ -54,6 +54,12 @@ class SettingsActivity : AppCompatActivity() {
         }
         b.about.title.text = getString(R.string.app_full_name)
         b.about.summary.text = getString(R.string.about_version, versionName()) + "\n" + getString(R.string.copyright)
+        b.update.title.setText(R.string.update_title)
+        showUpdateState()
+        b.update.root.setOnClickListener {
+            val newer = UpdateCheck.availableUpdate(this)
+            if (newer != null) UpdateCheck.openDownload(this) else checkForUpdate()
+        }
         b.feedback.title.setText(R.string.feedback_title)
         b.feedback.summary.setText(R.string.feedback_summary)
         b.feedback.root.setOnClickListener { showFeedback() }
@@ -137,6 +143,26 @@ class SettingsActivity : AppCompatActivity() {
             .setPositiveButton(android.R.string.ok, null)
             .show()
         dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
+    }
+
+    /** Stav podle poslední kontroly – bez dotazu na síť. */
+    private fun showUpdateState() {
+        val latest = UpdateCheck.knownLatest(this)
+        val newer = UpdateCheck.availableUpdate(this)
+        b.update.summary.text = when {
+            newer != null -> getString(R.string.update_available, newer)
+            latest != null -> getString(R.string.update_current, versionName())
+            else -> getString(R.string.update_tap_to_check)
+        }
+    }
+
+    private fun checkForUpdate() {
+        b.update.summary.setText(R.string.update_checking)
+        lifecycleScope.launch {
+            UpdateCheck.check(this@SettingsActivity, force = true)
+                .onSuccess { showUpdateState() }
+                .onFailure { b.update.summary.setText(R.string.update_failed) }
+        }
     }
 
     private fun showFeedback() {

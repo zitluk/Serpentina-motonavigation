@@ -144,6 +144,15 @@
     <string name="quick_food">Food</string>
     <string name="quick_nothing">Nothing found within %1$d km.</string>
     <string name="quick_from_map">Distance from the map centre – your location is not known yet.</string>
+    <string name="update_title">Check for updates</string>
+    <string name="update_tap_to_check">Tap to check whether a new version is out</string>
+    <string name="update_checking">Checking on GitHub…</string>
+    <string name="update_current">You have the latest version %1$s</string>
+    <string name="update_available">Version %1$s is available – tap to download</string>
+    <string name="update_failed">Could not check (no internet?) – tap to try again</string>
+    <string name="update_banner">New version %1$s is available</string>
+    <string name="update_download">Download</string>
+    <string name="update_dismiss">Dismiss</string>
     <string name="feedback_title">Feedback for the developer</string>
     <string name="feedback_summary">Tell us what doesn\'t work or what to improve</string>
     <string name="feedback_message_hint">Your message</string>

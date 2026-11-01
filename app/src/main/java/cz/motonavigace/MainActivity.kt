@@ -172,6 +172,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         b.btnNavigate.setOnClickListener { startNavigation() }
         b.btnStopNav.setOnClickListener { stopNavigation() }
+        b.btnUpdateDownload.setOnClickListener { UpdateCheck.openDownload(this) }
+        b.btnUpdateDismiss.setOnClickListener {
+            UpdateCheck.availableUpdate(this)?.let { UpdateCheck.dismiss(this, it) }
+            showUpdateCard()
+        }
 
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
@@ -191,6 +196,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
         askForBike = savedInstanceState == null && bikePosition() != null
         // Po spuštění mapu vycentrujeme na polohu, jen ne po otočení obrazovky
         if (savedInstanceState == null) startWaitingForFix()
+        // Nová verze na GitHubu – nejvýš jednou za 12 h, bez internetu se nic neukáže
+        lifecycleScope.launch {
+            UpdateCheck.check(this@MainActivity)
+            showUpdateCard()
+        }
         requestLocation()
         if (savedInstanceState != null) restoreWaypoints(savedInstanceState)
         handleIntent(intent)
@@ -242,6 +252,16 @@ class MainActivity : AppCompatActivity(), LocationListener {
             TrackLibrary.lastRecorded = null
             Toast.makeText(this, getString(R.string.recording_saved, it.nameWithoutExtension), Toast.LENGTH_LONG).show()
         }
+        // Po návratu z Nastavení, kde se mohla aktualizace právě najít
+        showUpdateCard()
+    }
+
+    /** Upozornění na novou verzi – ne během navigace a ne u verze, kterou uživatel zavřel. */
+    private fun showUpdateCard() {
+        val newer = UpdateCheck.availableUpdate(this)
+        val show = newer != null && !UpdateCheck.isDismissed(this, newer) && navigator == null
+        if (show) b.updateText.text = getString(R.string.update_banner, newer)
+        b.updateCard.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     override fun onPause() {
@@ -1032,6 +1052,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.routePanel.visibility = if (!on && end != null) View.VISIBLE else View.GONE
         b.navBanner.visibility = if (on) View.VISIBLE else View.GONE
         b.navPanel.visibility = if (on) View.VISIBLE else View.GONE
+        if (on) b.updateCard.visibility = View.GONE else showUpdateCard()
         stopNavigationOnBack.isEnabled = on
         if (on) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

@@ -147,6 +147,15 @@
     <string name="quick_food">Občerstvení</string>
     <string name="quick_nothing">Do %1$d km nic nenalezeno.</string>
     <string name="quick_from_map">Vzdálenost od středu mapy – poloha zatím není známá.</string>
+    <string name="update_title">Kontrola aktualizací</string>
+    <string name="update_tap_to_check">Ťuknutím zkontrolujete, jestli vyšla nová verze</string>
+    <string name="update_checking">Kontroluji na GitHubu…</string>
+    <string name="update_current">Máte nejnovější verzi %1$s</string>
+    <string name="update_available">K dispozici je verze %1$s – ťuknutím stáhnete</string>
+    <string name="update_failed">Nepodařilo se zjistit (bez internetu?) – ťuknutím zkusíte znovu</string>
+    <string name="update_banner">K dispozici je nová verze %1$s</string>
+    <string name="update_download">Stáhnout</string>
+    <string name="update_dismiss">Zavřít upozornění</string>
     <string name="feedback_title">Zpětná vazba pro vývojáře</string>
     <string name="feedback_summary">Napište, co nefunguje nebo co vylepšit</string>
     <string name="feedback_message_hint">Vaše zpráva</string>

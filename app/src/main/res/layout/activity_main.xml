@@ -173,6 +173,61 @@
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         app:drawableStartCompat="@drawable/ic_my_location" />
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- Na GitHubu vyšla novější verze aplikace -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/updateCard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/updateText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:drawablePadding="8dp"
+                            android:gravity="center_vertical"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textStyle="bold"
+                            app:drawableStartCompat="@drawable/ic_download" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:baselineAligned="false"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnUpdateDownload"
+                                style="@style/Glove.Action"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="24dp"
+                                android:text="@string/update_download" />
+
+                            <Button
+                                android:id="@+id/btnUpdateDismiss"
+                                style="@style/Glove.Action.Outlined"
+                                android:layout_width="64dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:contentDescription="@string/update_dismiss"
+                                app:icon="@drawable/ic_close"
+                                app:iconGravity="textStart"
+                                app:iconPadding="0dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
             <LinearLayout
