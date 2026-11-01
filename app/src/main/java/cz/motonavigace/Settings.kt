@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
 import androidx.annotation.StringRes
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatDelegate
@@ -72,6 +73,15 @@ object Settings {
     var markerColor: Int
         get() = prefs.getInt("marker_color", MARKER_COLORS[0])
         set(value) = prefs.edit { putInt("marker_color", value) }
+
+    /** Vypnuto = aplikace stahuje a odesílá jen přes Wi-Fi (nebo jinou neměřenou síť). */
+    var mobileData: Boolean
+        get() = prefs.getBoolean("mobile_data", true)
+        set(value) = prefs.edit { putBoolean("mobile_data", value) }
+
+    /** Smí aplikace teď na internet – při vypnutých mobilních datech jen mimo měřenou síť. */
+    fun canUseNetwork(context: Context): Boolean =
+        mobileData || context.getSystemService(ConnectivityManager::class.java)?.isActiveNetworkMetered == false
 
     /** Výrobce motocyklu, prázdný = nevybráno. */
     var manufacturer: String

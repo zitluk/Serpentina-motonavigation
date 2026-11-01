@@ -130,6 +130,14 @@
     <string name="language_system">System default</string>
     <string name="language_czech">Čeština</string>
     <string name="language_english">English</string>
+    <string name="settings_data">Data</string>
+    <string name="settings_mobile_data">Mobile data</string>
+    <string name="mobile_data_on">Allow mobile data</string>
+    <string name="mobile_data_off">Wi-Fi only</string>
+    <string name="mobile_data_on_summary">Allowed – maps, updates and feedback also use mobile data</string>
+    <string name="mobile_data_off_summary">Off – the app downloads and sends only over Wi-Fi. Offline navigation still works.</string>
+    <string name="wifi_only_wait">Mobile data is turned off in settings – please connect to Wi-Fi</string>
+    <string name="download_waits_for_wifi">Mobile data is off – the download will start once you connect to Wi-Fi</string>
     <string name="settings_about">About</string>
     <string name="about_version">Version %1$s</string>
     <string name="speed_unit">km/h</string>

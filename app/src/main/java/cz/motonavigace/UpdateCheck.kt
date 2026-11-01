@@ -12,6 +12,9 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
+/** Mobilní data jsou v nastavení vypnutá a telefon není na Wi-Fi. */
+class NoNetworkAllowed : Exception()
+
 /**
  * Kontrola nové verze na GitHubu. Nejnovější vydání má vždy APK pod stálým odkazem
  * [DOWNLOAD_URL] (stejným jako v QR kódu), číslo verze je ve značce vydání (v0.3.0).
@@ -45,6 +48,7 @@ object UpdateCheck {
         if (!force && System.currentTimeMillis() - p.getLong("checked_at", 0) < INTERVAL_MS) {
             return@withContext Result.success(p.getString("latest", null))
         }
+        if (!Settings.canUseNetwork(context)) return@withContext Result.failure(NoNetworkAllowed())
         runCatching {
             val conn = URL(LATEST_API).openConnection() as HttpURLConnection
             try {

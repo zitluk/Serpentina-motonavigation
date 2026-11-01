@@ -57,7 +57,8 @@ object Downloads {
                 .setTitle("${region.name}: ${target.name}")
                 .setDestinationUri(Uri.fromFile(part))
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
-                .setAllowedOverMetered(true)
+                // Při vypnutých mobilních datech počká DownloadManager na Wi-Fi
+                .setAllowedOverMetered(Settings.mobileData)
             val id = dm(context).enqueue(request)
             prefs(context).edit { putString(id.toString(), "${region.name}\t${target.path}") }
         }

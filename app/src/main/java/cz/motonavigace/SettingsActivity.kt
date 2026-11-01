@@ -52,6 +52,14 @@ class SettingsActivity : AppCompatActivity() {
                 }
             })
         }
+        b.mobileData.title.setText(R.string.settings_mobile_data)
+        b.mobileData.root.setOnClickListener {
+            val labels = listOf(getString(R.string.mobile_data_on), getString(R.string.mobile_data_off))
+            choose(R.string.settings_mobile_data, labels, if (Settings.mobileData) 0 else 1) {
+                Settings.mobileData = it == 0
+                refresh()
+            }
+        }
         b.about.title.text = getString(R.string.app_full_name)
         b.about.summary.text = getString(R.string.about_version, versionName()) + "\n" + getString(R.string.copyright)
         b.update.title.setText(R.string.update_title)
@@ -128,6 +136,7 @@ class SettingsActivity : AppCompatActivity() {
         val bike = Settings.bike
         b.bike.summary.text = getString(bike.label) + "\n" + getString(bike.description)
         b.language.summary.setText(Settings.language.label)
+        b.mobileData.summary.setText(if (Settings.mobileData) R.string.mobile_data_on_summary else R.string.mobile_data_off_summary)
     }
 
     private fun choose(title: Int, items: List<String>, checked: Int, onChosen: (Int) -> Unit) {
@@ -161,7 +170,9 @@ class SettingsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             UpdateCheck.check(this@SettingsActivity, force = true)
                 .onSuccess { showUpdateState() }
-                .onFailure { b.update.summary.setText(R.string.update_failed) }
+                .onFailure {
+                    b.update.summary.setText(if (it is NoNetworkAllowed) R.string.wifi_only_wait else R.string.update_failed)
+                }
         }
     }
 
@@ -183,6 +194,10 @@ class SettingsActivity : AppCompatActivity() {
                 v.contactLayout.error =
                     if (contact.isNotEmpty() && !Patterns.EMAIL_ADDRESS.matcher(contact).matches()) getString(R.string.feedback_bad_email) else null
                 if (v.messageLayout.error != null || v.contactLayout.error != null) return@setOnClickListener
+                if (!Settings.canUseNetwork(this)) {
+                    Toast.makeText(this, R.string.wifi_only_wait, Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
 
                 send.isEnabled = false
                 v.progress.visibility = View.VISIBLE

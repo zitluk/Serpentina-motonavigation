@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.format.Formatter
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -40,7 +41,7 @@ class DownloadsActivity : AppCompatActivity() {
         binding.list.layoutManager = LinearLayoutManager(this)
         binding.list.adapter = adapter
 
-        lifecycleScope.launch {
+        if (Settings.canUseNetwork(this)) lifecycleScope.launch {
             remoteDates = withContext(Dispatchers.IO) {
                 Region.ALL.filter { File(Storage.mapsDir, it.mapFileName).isFile }
                     .mapNotNull { r -> Downloads.remoteDate(r)?.let { r.name to it } }.toMap()
@@ -64,6 +65,11 @@ class DownloadsActivity : AppCompatActivity() {
     private val dateFormat = SimpleDateFormat("d. M. yyyy", Locale.ROOT)
 
     private fun formatDate(ms: Long): String = dateFormat.format(Date(ms))
+
+    /** Bez povolených mobilních dat čeká stahování na Wi-Fi – ať to uživatel ví. */
+    private fun warnWifiOnly() {
+        if (!Settings.canUseNetwork(this)) Toast.makeText(this, R.string.download_waits_for_wifi, Toast.LENGTH_LONG).show()
+    }
 
     override fun onSupportNavigateUp(): Boolean {
         finish()
@@ -111,7 +117,7 @@ class DownloadsActivity : AppCompatActivity() {
                         ).joinToString("\n")
                         this.progress.visibility = android.view.View.GONE
                         update.visibility = if (newer) android.view.View.VISIBLE else android.view.View.GONE
-                        update.setOnClickListener { Downloads.update(ctx, region); notifyItemChanged(position) }
+                        update.setOnClickListener { Downloads.update(ctx, region); warnWifiOnly(); notifyItemChanged(position) }
                         action.setText(R.string.delete)
                         action.setOnClickListener { Downloads.delete(region); notifyItemChanged(position) }
                     }
@@ -123,7 +129,7 @@ class DownloadsActivity : AppCompatActivity() {
                         status.text = if (started) getString(R.string.partially_downloaded, have, files.size) else getString(R.string.not_downloaded)
                         this.progress.visibility = android.view.View.GONE
                         action.setText(R.string.download)
-                        action.setOnClickListener { Downloads.start(ctx, region); notifyItemChanged(position) }
+                        action.setOnClickListener { Downloads.start(ctx, region); warnWifiOnly(); notifyItemChanged(position) }
                     }
                 }
             }

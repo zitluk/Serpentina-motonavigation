@@ -133,6 +133,14 @@
     <string name="language_system">Podle systému</string>
     <string name="language_czech">Čeština</string>
     <string name="language_english">English</string>
+    <string name="settings_data">Data</string>
+    <string name="settings_mobile_data">Mobilní data</string>
+    <string name="mobile_data_on">Povolit mobilní data</string>
+    <string name="mobile_data_off">Jen přes Wi-Fi</string>
+    <string name="mobile_data_on_summary">Povolená – mapy, aktualizace i zpětná vazba jdou i přes mobilní data</string>
+    <string name="mobile_data_off_summary">Vypnutá – aplikace stahuje a odesílá jen přes Wi-Fi. Navigace offline funguje dál.</string>
+    <string name="wifi_only_wait">Mobilní data jsou v nastavení vypnutá – připojte se k Wi-Fi</string>
+    <string name="download_waits_for_wifi">Mobilní data jsou vypnutá – stahování začne po připojení k Wi-Fi</string>
     <string name="settings_about">O aplikaci</string>
     <string name="about_version">Verze %1$s</string>
     <string name="speed_unit">km/h</string>
