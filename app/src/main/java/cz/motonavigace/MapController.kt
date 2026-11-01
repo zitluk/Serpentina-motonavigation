@@ -243,8 +243,21 @@ class MapController(
         map.animator().animateTo(900, pos)
     }
 
-    /** Sever nahoře drží jezdce víc uprostřed, po směru jízdy víc dole (vidí dál dopředu). */
-    private fun navPivotY() = if (mode == MapViewMode.NORTH_UP) 0.3f else 0.6f
+    /**
+     * Svislá poloha jezdce při navigaci (−1 nahoře, 0 uprostřed, 1 dole). Nastavuje ji obrazovka
+     * na střed viditelné mapy mezi horním pruhem s pokynem a spodním panelem – níž by ho panel zakryl.
+     */
+    private var navPivot = 0f
+
+    fun setNavPivot(pivotY: Float) {
+        navPivot = pivotY.coerceIn(-0.9f, 0.9f)
+        if (navigating) {
+            map.viewport().setMapViewCenter(0f, navPivot)
+            map.updateMap(true)
+        }
+    }
+
+    private fun navPivotY() = navPivot
 
     // ---------------------------------------------------------------- překryvy
 

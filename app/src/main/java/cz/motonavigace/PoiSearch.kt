@@ -1,5 +1,6 @@
 package cz.motonavigace
 
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
@@ -8,7 +9,6 @@ import org.mapsforge.core.model.LatLong
 import java.text.Normalizer
 import java.util.Locale
 import kotlin.coroutines.coroutineContext
-import kotlin.math.cos
 
 data class Place(
     val name: String,
@@ -32,6 +32,8 @@ enum class PoiCategory(val label: Int, val amenities: Set<String>) {
  */
 object PoiSearch {
     private const val CANDIDATES_PER_FILE = 400
+    /** Kolik shod jména vzít z rejstříku – pak se řadí podle skóre a vzdálenosti. */
+    private const val INDEX_CANDIDATES = 3000
     private const val MAX_RESULTS = 50
     /** Stejné jméno i druh blíž než tohle (m) je tentýž cíl – třeba zastávka pro oba směry. */
     private const val DUPLICATE_METERS = 1000.0
@@ -47,44 +49,50 @@ object PoiSearch {
         if (q.length < 2) return@withContext emptyList()
 
         val found = mutableListOf<Pair<Int, Place>>()
+        fun collect(c: Cursor, requireSubstring: Boolean) {
+            while (c.moveToNext()) {
+                val tags = parseTags(c.getString(2))
+                val normalized = tags["normalized_name"] ?: continue
+                if (requireSubstring && !normalized.contains(q)) continue
+                val pos = LatLong(c.getDouble(0), c.getDouble(1))
+                val place = Place(
+                    name = tags["name"] ?: continue,
+                    description = describe(tags),
+                    position = pos,
+                    distance = near?.sphericalDistance(pos),
+                )
+                found += score(tags, normalized, q) to place
+            }
+        }
         for (file in Storage.poiFiles()) {
             coroutineContext.ensureActive()
             val db = runCatching {
                 SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS)
             }.getOrNull() ?: continue
-            val pattern = "%normalized_name=%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-            // Kandidáti od nejbližších – jinak by LIMIT vzal libovolné a nejbližší pobočka mohla chybět
-            val order = near?.let {
-                val k = cos(Math.toRadians(it.latitude))
-                " ORDER BY (i.lat - ${it.latitude}) * (i.lat - ${it.latitude}) + " +
-                    "(i.lon - ${it.longitude}) * (i.lon - ${it.longitude}) * ${k * k}"
-            }.orEmpty()
-            // Obce zvlášť, aby je v LIMITu nepřebily tisíce zastávek a obchodů se stejným jménem
-            val queries = listOf(
-                "d.data LIKE ? ESCAPE '\\' AND d.data LIKE '%place=%'",
-                "d.data LIKE ? ESCAPE '\\'",
-            )
-            db.use { for (where in queries) {
-                it.rawQuery(
-                    "SELECT i.lat, i.lon, d.data FROM poi_data d JOIN poi_index i ON i.id = d.id " +
-                        "WHERE $where$order LIMIT $CANDIDATES_PER_FILE",
-                    arrayOf(pattern),
-                ).use { c ->
-                    while (c.moveToNext()) {
-                        val tags = parseTags(c.getString(2))
-                        val normalized = tags["normalized_name"] ?: continue
-                        if (!normalized.contains(q)) continue
-                        val pos = LatLong(c.getDouble(0), c.getDouble(1))
-                        val place = Place(
-                            name = tags["name"] ?: continue,
-                            description = describe(tags),
-                            position = pos,
-                            distance = near?.sphericalDistance(pos),
-                        )
-                        found += score(tags, normalized, q) to place
+            db.use {
+                val ids = SearchIndex.find(file, q, INDEX_CANDIDATES)
+                if (ids != null) {
+                    // Rychlá cesta: shody z rejstříku jmen, podrobnosti jen pro ně (po dávkách kvůli limitu parametrů)
+                    for (chunk in ids.chunked(900)) {
+                        it.rawQuery(
+                            "SELECT i.lat, i.lon, d.data FROM poi_data d JOIN poi_index i ON i.id = d.id " +
+                                "WHERE d.id IN (${chunk.joinToString(",") { "?" }})",
+                            chunk.map(Long::toString).toTypedArray(),
+                        ).use { c -> collect(c, requireSubstring = false) }
+                    }
+                } else {
+                    // Rejstřík se teprve staví – pomalé procházení celého souboru
+                    val pattern = "%normalized_name=%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+                    // Obce zvlášť, aby je v LIMITu nepřebily tisíce zastávek a obchodů se stejným jménem
+                    for (where in listOf("d.data LIKE ? ESCAPE '\\' AND d.data LIKE '%place=%'", "d.data LIKE ? ESCAPE '\\'")) {
+                        it.rawQuery(
+                            "SELECT i.lat, i.lon, d.data FROM poi_data d JOIN poi_index i ON i.id = d.id " +
+                                "WHERE $where LIMIT $CANDIDATES_PER_FILE",
+                            arrayOf(pattern),
+                        ).use { c -> collect(c, requireSubstring = true) }
                     }
                 }
-            } }
+            }
         }
         dedupeNearby(
             found

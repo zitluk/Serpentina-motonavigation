@@ -172,6 +172,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         b.btnNavigate.setOnClickListener { startNavigation() }
         b.btnStopNav.setOnClickListener { stopNavigation() }
+        // Výška horního pruhu s pokynem i spodního panelu se mění (pruhy, zalomený text) – jezdec drží střed volné mapy
+        listOf(b.navBanner, b.navPanel).forEach { panel ->
+            panel.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                if (b.navPanel.visibility == View.VISIBLE) updateNavPivot()
+            }
+        }
         b.btnUpdateDownload.setOnClickListener { UpdateCheck.openDownload(this) }
         b.btnUpdateDismiss.setOnClickListener {
             UpdateCheck.availableUpdate(this)?.let { UpdateCheck.dismiss(this, it) }
@@ -254,6 +260,18 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         // Po návratu z Nastavení, kde se mohla aktualizace právě najít
         showUpdateCard()
+        // Rejstřík jmen pro rychlé hledání – po stažení nebo aktualizaci mapy se na pozadí postaví znovu
+        lifecycleScope.launch { SearchIndex.ensureAll() }
+    }
+
+    /** Jezdec při navigaci doprostřed viditelné mapy mezi horním pruhem s pokynem a spodním panelem. */
+    private fun updateNavPivot() {
+        val h = b.mapView.height.takeIf { it > 0 } ?: return
+        val mapTop = IntArray(2).also(b.mapView::getLocationInWindow)[1]
+        val top = IntArray(2).also(b.navBanner::getLocationInWindow)[1] + b.navBanner.height - mapTop
+        val bottom = IntArray(2).also(b.navPanel::getLocationInWindow)[1] - mapTop
+        if (bottom <= top) return
+        mapCtl.setNavPivot(((top + bottom) / 2f - h / 2f) / (h / 2f))
     }
 
     /** Upozornění na novou verzi – ne během navigace a ne u verze, kterou uživatel zavřel. */
