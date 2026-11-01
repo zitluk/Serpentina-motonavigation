@@ -91,6 +91,7 @@ class MapController(
             if (e == org.oscim.map.Map.MOVE_EVENT || e == org.oscim.map.Map.SCALE_EVENT ||
                 e == org.oscim.map.Map.ROTATE_EVENT || e == org.oscim.map.Map.TILT_EVENT
             ) onUserMove?.invoke()
+            if (e == org.oscim.map.Map.POSITION_EVENT) view.post { refreshLocationView() }
         })
 
         val layers = map.layers()
@@ -250,9 +251,29 @@ class MapController(
     /** Jezdec jde pěšky (navigace k motorce) – místo motorky se ukazuje chodec. */
     var walking = false
 
+    private var lastLocation: LatLong? = null
+    private var lastHeading: Float? = null
+
+    /**
+     * 3D motorka se při otáčení mapy musí ukázat z jiného úhlu i bez nové polohy
+     * a po přepnutí 3D ↔ 2D se vyměnit za plochou ikonu (a zpět).
+     */
+    private fun refreshLocationView() {
+        val p = lastLocation ?: return
+        val frame = if (!walking && mode == MapViewMode.PERSPECTIVE_3D && MarkerIcons.has3d(Settings.markerShape))
+            MarkerIcons.frame3d((lastHeading ?: 0f) + map.mapPosition.bearing) else -1
+        if (!markerKey.endsWith("/$frame")) setLocation(p, null)
+    }
+
     /** @param headingDeg směr jízdy od severu, null = neznámý (ikona míří na sever) */
     fun setLocation(p: LatLong, headingDeg: Float?) {
-        val key = "${Settings.markerShape.id}/${Settings.markerColor}/$walking"
+        lastLocation = p
+        headingDeg?.let { lastHeading = it }
+        val shape = Settings.markerShape
+        // Ve 3D stojí motorka svisle a je vidět z úhlu kamery; plochá by na nakloněné mapě ležela
+        val frame3d = if (!walking && mode == MapViewMode.PERSPECTIVE_3D && MarkerIcons.has3d(shape))
+            MarkerIcons.frame3d((lastHeading ?: 0f) + map.mapPosition.bearing) else -1
+        val key = "${shape.id}/${Settings.markerColor}/$walking/$frame3d"
         if (key != markerKey) {
             markerKey = key
             locationItem = null
@@ -264,6 +285,12 @@ class MapController(
                     AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
                         MarkerIcons.pedestrian(context, Settings.markerColor, 40f))),
                     MarkerSymbol.HotspotPlace.BOTTOM_CENTER, true,
+                )
+            } else if (frame3d >= 0) {
+                MarkerSymbol(
+                    AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
+                        MarkerIcons.bike3d(context, shape, Settings.markerColor, frame3d, 72f))),
+                    0.5f, MarkerIcons.ANCHOR_3D_Y, true,
                 )
             } else {
                 // Ne-billboard: ikona leží na mapě, otáčí se a ve 3D se naklání s ní
@@ -279,7 +306,7 @@ class MapController(
         }
         item.geoPoint = GeoPoint(p.latitude, p.longitude)
         // VTM otáčí ikonu ležící na mapě po směru hodinových ručiček, stejně jako kurz
-        if (!walking) headingDeg?.let { item.setRotation(it) }
+        if (!walking && frame3d < 0) headingDeg?.let { item.setRotation(it) }
         location.populate()
         map.updateMap(true)
     }

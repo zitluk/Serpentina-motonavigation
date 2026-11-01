@@ -152,6 +152,58 @@ val MARKER_COLORS = listOf(
 )
 
 object MarkerIcons {
+    // ---------------------------------------------------------------- 3D pohledy pro nakloněnou mapu
+
+    /**
+     * Typy s předem vykreslenými 3D pohledy (tools/bike3d.py): pruh FRAMES_3D čtvercových snímků,
+     * snímek i = motorka natočená o i·360/FRAMES_3D° po směru hodin vůči obrazovce (0 = jede „do obrazovky“).
+     * `body` je lak ve stupních šedi k obarvení, `fixed` ostatní díly, stín a odlesky.
+     */
+    private val SHEETS_3D = mapOf(
+        MarkerShape.SPORT to (R.drawable.bike3d_sport_body to R.drawable.bike3d_sport_fixed),
+        MarkerShape.TOURING to (R.drawable.bike3d_touring_body to R.drawable.bike3d_touring_fixed),
+        MarkerShape.NAKED to (R.drawable.bike3d_naked_body to R.drawable.bike3d_naked_fixed),
+        MarkerShape.ADVENTURE to (R.drawable.bike3d_adventure_body to R.drawable.bike3d_adventure_fixed),
+        MarkerShape.CRUISER to (R.drawable.bike3d_cruiser_body to R.drawable.bike3d_cruiser_fixed),
+        MarkerShape.SCOOTER to (R.drawable.bike3d_scooter_body to R.drawable.bike3d_scooter_fixed),
+    )
+    private const val FRAMES_3D = 24
+    /** Svislá poloha bodu, kde motorka stojí na zemi, ve snímku (0 = nahoře, 1 = dole). */
+    const val ANCHOR_3D_Y = 0.664f
+    private val sheets = mutableMapOf<Int, Bitmap>()
+
+    fun has3d(shape: MarkerShape) = shape in SHEETS_3D
+
+    /** Index snímku pro natočení motorky vůči obrazovce ve stupních (po směru hodin). */
+    fun frame3d(relativeDeg: Float): Int = Math.floorMod(Math.round(relativeDeg / (360f / FRAMES_3D)), FRAMES_3D)
+
+    /** Stojící motorka z pohledu kamery 3D mapy, obarvená zvolenou barvou. */
+    fun bike3d(context: Context, shape: MarkerShape, color: Int, frame: Int, sizeDp: Float): Bitmap {
+        val (bodyRes, fixedRes) = SHEETS_3D.getValue(shape)
+        val body = sheet(context, bodyRes)
+        val fixed = sheet(context, fixedRes)
+        val fw = body.height
+        val px = (sizeDp * context.resources.displayMetrics.density).toInt()
+        val out = createBitmap(px, px)
+        val c = Canvas(out)
+        val src = android.graphics.Rect(frame * fw, 0, (frame + 1) * fw, fw)
+        val dst = android.graphics.Rect(0, 0, px, px)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        // Šedý lak × barva = stínovaný lak ve zvolené barvě; ostatní díly přes něj
+        paint.colorFilter = android.graphics.PorterDuffColorFilter(color, android.graphics.PorterDuff.Mode.MULTIPLY)
+        c.drawBitmap(body, src, dst, paint)
+        paint.colorFilter = null
+        c.drawBitmap(fixed, src, dst, paint)
+        return out
+    }
+
+    private fun sheet(context: Context, res: Int): Bitmap = sheets.getOrPut(res) {
+        android.graphics.BitmapFactory.decodeResource(context.resources, res,
+            android.graphics.BitmapFactory.Options().apply { inScaled = false })
+    }
+
+    // ---------------------------------------------------------------- ikony shora
+
     private const val TYRE = 0xFF1B1B1B.toInt()
     private const val SEAT = 0xFF262626.toInt()
     private const val DARK = 0xFF202020.toInt()
