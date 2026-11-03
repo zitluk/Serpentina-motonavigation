@@ -1,6 +1,7 @@
 package cz.motonavigace
 
 import android.content.Context
+import android.os.SystemClock
 import android.graphics.drawable.BitmapDrawable
 import android.view.Choreographer
 import androidx.annotation.ColorInt
@@ -112,7 +113,11 @@ class MapController(
         map.events.bind(org.oscim.map.Map.UpdateListener { e, _ ->
             if (e == org.oscim.map.Map.MOVE_EVENT || e == org.oscim.map.Map.SCALE_EVENT ||
                 e == org.oscim.map.Map.ROTATE_EVENT || e == org.oscim.map.Map.TILT_EVENT
-            ) onUserMove?.invoke()
+            ) {
+                // Gesto za navigace: kamera přestane jezdce chvíli sledovat, ať jde prohlédnout trasu
+                if (navigating) freeLookUntil = SystemClock.uptimeMillis() + FREE_LOOK_MS
+                onUserMove?.invoke()
+            }
             if (e == org.oscim.map.Map.POSITION_EVENT) view.post { refreshLocationView() }
         })
 
@@ -187,6 +192,15 @@ class MapController(
 
     private fun routeColor() = if (night) ROUTE_COLOR_NIGHT else ROUTE_COLOR
 
+    /** Vrstvy stylu s ikonami bodů zájmu, které se kreslí (výběr v Nastavení, [MapPoi]). */
+    private var poiLayers: Set<String> = MapPoi.entries.filter { it.default }.map { it.layer }.toSet()
+
+    fun setPoiLayers(layers: Set<String>) {
+        if (layers == poiLayers) return
+        poiLayers = layers
+        if (baseLayers.isNotEmpty()) loadTheme()
+    }
+
     // ---------------------------------------------------------------- průběh navigace
 
     /** Za navigace: trasa před jezdcem tmavě modrá a široká, projetá část za ním světle modrá a užší. */
@@ -213,7 +227,7 @@ class MapController(
 
     private fun loadTheme() {
         val old = theme
-        val file = VtmThemes.MOTORIDER.apply { menuCallback = MotoThemeMenu }
+        val file = VtmThemes.MOTORIDER.apply { menuCallback = MotoThemeMenu(poiLayers) }
         val loaded = if (night) ThemeLoader.load(file, NightThemeCallback) else ThemeLoader.load(file)
         map.setTheme(loaded)
         theme = loaded
@@ -304,20 +318,42 @@ class MapController(
     private var navZoomOffset = 0
 
     fun zoomBy(delta: Int) {
-        if (navigating) {
-            navZoomOffset = (navZoomOffset + delta).coerceIn(-4, 3)
-            camZoom = (camZoom + delta).coerceIn(3.0, 20.0)
+        if (navigating && !freeLook) {
+            // Ruční posun automatického zoomu – až po největší přiblížení mapy, ne jen o pár kroků
+            val auto = camZoom - navZoomOffset
+            navZoomOffset = (navZoomOffset + delta).coerceIn((MIN_ZOOM - auto).toInt(), (MAX_ZOOM - auto).toInt() + 1)
+            camZoom = (camZoom + delta).coerceIn(MIN_ZOOM, MAX_ZOOM)
             kickGlide()
             return
         }
+        // Při volném pohledu za navigace + a − přibližují prohlíženou mapu a pohled prodlouží
+        if (navigating) freeLookUntil = SystemClock.uptimeMillis() + FREE_LOOK_MS
         val pos = map.mapPosition
-        pos.setZoomLevel((pos.zoomLevel + delta).coerceIn(3, 20))
+        // Od skutečného (i neceločíselného) přiblížení, ať každé ťuknutí přiblíží o celý krok
+        pos.setScale(Math.pow(2.0, (pos.zoom + delta).coerceIn(MIN_ZOOM, MAX_ZOOM)))
         map.animator().animateTo(250, pos)
     }
+
+    /**
+     * Volný pohled za navigace: po gestu kamera jezdce nesleduje, dokud neuběhne [FREE_LOOK_MS]
+     * od posledního dotyku nebo dokud jezdec neťukne na tlačítko polohy ([resumeFollow]).
+     */
+    private var freeLookUntil = 0L
+    private val freeLook get() = navigating && SystemClock.uptimeMillis() < freeLookUntil
+
+    /** Zpět ke sledování jezdce (tlačítko polohy za navigace). */
+    fun resumeFollow() {
+        freeLookUntil = 0
+        kickGlide()
+    }
+
+    /** Navigace ve volném pohledu – tlačítko polohy pak vrací ke sledování. */
+    val isFreeLook: Boolean get() = freeLook
 
     fun startFollowing() {
         navZoomOffset = 0
         zoomSpeed = -1.0
+        freeLookUntil = 0
         navigating = true
         map.viewport().setMapViewCenter(0f, navPivotY())
     }
@@ -456,7 +492,8 @@ class MapController(
             if (abs(angleDiff(next, target)) > 0.5f) settled = false
         }
         placeMarker()
-        if (camera) {
+        // Ve volném pohledu jede jen ikona, mapa zůstává tam, kam ji jezdec posunul
+        if (camera && !freeLook) {
             val pos = map.mapPosition
             pos.setPosition(shownLat, shownLon)
             val targetScale = Math.pow(2.0, camZoom)
@@ -656,15 +693,18 @@ class MapController(
         /** Podíl zbývajícího otočení ikony, zoomu, natočení a náklonu kamery za jeden snímek. */
         private const val HEADING_SMOOTHING = 0.15f
         private const val CAMERA_SMOOTHING = 0.08f
+        /** Po posledním dotyku mapy za navigace se kamera vrátí k jezdci po této době. */
+        private const val FREE_LOOK_MS = 15_000L
+        private const val MIN_ZOOM = 3.0
+        private const val MAX_ZOOM = 20.0
     }
 
     /**
-     * Ze stylu MOTORIDER vypne vrstvy, které motorkáři mapu jen zahlcují
-     * (parkoviště, nabíječky aut, obchody, MHD, čísla domů, restaurace…).
-     * Pumpy, vyhlídky, průsmyky, vrcholy a ubytování zůstávají.
+     * Ze stylu MOTORIDER zapne jen vybrané druhy bodů zájmu ([shownPoi]); čísla domů skryje vždy.
+     * Ostatní vrstvy (vrstevnice, detaily silnic, příroda) zůstávají.
      */
-    private object MotoThemeMenu : XmlRenderThemeMenuCallback {
-        private val hidden = setOf("parking", "charging_station", "shop", "public_transport", "housenumber", "money", "entertainment", "food")
+    private class MotoThemeMenu(shownPoi: Set<String>) : XmlRenderThemeMenuCallback {
+        private val hidden = MapPoi.entries.map { it.layer }.toSet() - shownPoi + "housenumber"
 
         override fun getCategories(style: XmlRenderThemeStyleMenu): Set<String> {
             val base = style.getLayer(style.defaultValue)

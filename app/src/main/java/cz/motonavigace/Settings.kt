@@ -25,6 +25,28 @@ enum class NightMap(val id: Int, @StringRes val label: Int) {
     NEVER(3, R.string.night_map_never),
 }
 
+/**
+ * Druh bodů zájmu na mapě = vrstva stylu MOTORIDER. [default] = ukazuje se, dokud uživatel
+ * výběr nezmění (pro motorkáře užitečné; parkoviště, obchody, MHD… mapu jen zahlcují).
+ */
+enum class MapPoi(val layer: String, @StringRes val label: Int, val default: Boolean) {
+    FUEL("fuel", R.string.poi_fuel, true),
+    VIEW("view", R.string.poi_view, true),
+    MOUNTAIN_PASS("mountain_pass", R.string.poi_mountain_pass, true),
+    MOUNTAIN_PEAK("mountain_peak", R.string.poi_mountain_peak, true),
+    ATTRACTION("attraction", R.string.poi_attraction, true),
+    ACCOMMODATION("accommodation", R.string.poi_accommodation, true),
+    EMERGENCY("emergency", R.string.poi_emergency, true),
+    FOOD("food", R.string.poi_food, false),
+    PARKING("parking", R.string.poi_parking, false),
+    CHARGING("charging_station", R.string.poi_charging, false),
+    SHOP("shop", R.string.poi_shop, false),
+    MONEY("money", R.string.poi_money, false),
+    ENTERTAINMENT("entertainment", R.string.poi_entertainment, false),
+    PUBLIC_TRANSPORT("public_transport", R.string.poi_public_transport, false),
+    MISC("misc", R.string.poi_misc, true),
+}
+
 enum class AppLanguage(val id: Int, @StringRes val label: Int, val tag: String) {
     SYSTEM(0, R.string.language_system, ""),
     CZECH(1, R.string.language_czech, "cs"),
@@ -100,6 +122,11 @@ object Settings {
     var markerColor: Int
         get() = prefs.getInt("marker_color", MARKER_COLORS[0])
         set(value) = prefs.edit { putInt("marker_color", value) }
+
+    /** Druhy bodů zájmu, jejichž ikony mapa ukazuje (vrstvy stylu MOTORIDER). */
+    var poiLayers: Set<String>
+        get() = prefs.getStringSet("poi_layers", null)?.toSet() ?: MapPoi.entries.filter { it.default }.map { it.layer }.toSet()
+        set(value) = prefs.edit { putStringSet("poi_layers", value) }
 
     /** Vypnuto = aplikace stahuje a odesílá jen přes Wi-Fi (nebo jinou neměřenou síť). */
     var mobileData: Boolean

@@ -23,7 +23,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - **Ovládání v rukavicích** – velká tlačítka v celé aplikaci, menu a volby přes celou šířku displeje
 - **Ikona polohy** – šipka nebo silueta motocyklu (sportovní, cestovní, naked, enduro, chopper, skútr) v 8 barvách, natočená po směru jízdy
 - **Výrobce motocyklu** změní ikonu aplikace i úvodní logo přes celou šířku displeje; typ motocyklu přednastaví typ trasy, šotolinu, dálnice a odhad času
-- **Nastavení** – světlý / tmavý vzhled, jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), výběr hlasu navigace s ukázkou (nebo bez hlasu), vypnutí mobilních dat (stahování, kontrola aktualizací a zpětná vazba jen přes Wi-Fi)
+- **Nastavení** – světlý / tmavý vzhled, jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), výběr hlasu navigace s ukázkou (nebo bez hlasu), vypnutí mobilních dat (stahování, kontrola aktualizací a zpětná vazba jen přes Wi-Fi), výběr bodů zájmu na mapě (pumpy, vyhlídky, průsmyky, ubytování, parkoviště, restaurace…)
 - **Zpětná vazba** vývojáři přímo z aplikace a možnost drobné podpory přes QR Platbu
 - **Sdílení aplikace** – QR kód s odkazem ke stažení v Nastavení, nebo odeslání odkazu zprávou
 
@@ -34,8 +34,8 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - Panel trasy dole: délka, čas, varianty, typ trasy, vyhýbání, **Navigovat**
 - Tlačítko **3D / 2D / N** vpravo nahoře přepíná zobrazení mapy, tlačítko polohy vycentruje mapu na tvoji polohu. Dokud GPS nezná přesnou polohu, ukazuje se „Prosím počkejte na přesnou polohu“
 - Menu ☰ → **Projížďka po okolí** → zvol délku → Vytvořit; Obrátit pojede okruh opačně
-- Menu ☰ → **Záznam jízdy** → **Spustit záznam manuálně** (červený štítek REC na mapě, ťuknutím záznam zastavíš) a zaškrtávací volby **Spustit záznam sám po rozjezdu (od 10 km/h)** a **Zastavit záznam po ukončení navigace**
-- Menu ☰ → **Trasy a jízdy** – seznam jízd podle data a času; ťuknutím detail jízdy s náklonem, vzdáleností, časy, rychlostmi, zrychlením a stoupáním (s obrysem trasy) → Sdílet jako obrázek / Zobrazit na mapě / Navigovat po trase / Sdílet GPX / Smazat
+- Menu ☰ → **Záznam jízdy** → **Spustit záznam manuálně** (červený štítek REC na mapě, ťuknutím záznam zastavíš) a zaškrtávací volby **Spustit záznam po rozjezdu (od 10 km/h)** a **Zastavit záznam po ukončení navigace**
+- Menu ☰ → **Uložené jízdy** – seznam jízd podle data a času; ťuknutím detail jízdy s náklonem, vzdáleností, časy, rychlostmi, zrychlením a stoupáním → Sdílet jako obrázek / Zobrazit na mapě / Navigovat po trase / Sdílet GPX / Smazat
 - Navigace po GPX naplánuje trasu po silnicích přes body vybrané ze stopy, takže má pokyny i přepočet
 - Během navigace: další manévr nahoře, rychlost, příjezd a zbývající km dole, **Ukončit** (nebo tlačítko Zpět)
 - Mapy se stahují v aplikaci (**Stažení map**) po zemích z celého světa, velké země i po částech (např. Itálie – Isole = Sardinie a Sicílie): mapa, body zájmu i data pro trasy. Zemi najdeš polem **Hledat zemi** (česky i anglicky, s diakritikou i bez), u každé je vidět přibližná velikost. U stažené mapy se ukazuje datum dat a při novější verzi tlačítko Aktualizovat

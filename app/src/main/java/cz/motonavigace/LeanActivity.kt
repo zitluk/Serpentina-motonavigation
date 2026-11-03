@@ -46,7 +46,7 @@ class LeanActivity : AppCompatActivity(), LocationListener {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // Maxima se měří vždy od otevření obrazovky; jízdy si je ukládají samy (Trasy a jízdy)
+        // Maxima se měří vždy od otevření obrazovky; jízdy si je ukládají samy (Uložené jízdy)
         meter = LeanMeter(LeanSensors.calibration(this))
         sensors = LeanSensors(this, meter, ::displayRotation)
 

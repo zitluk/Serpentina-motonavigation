@@ -27,6 +27,7 @@
 
         <TextView style="@style/SettingsHeader" android:text="@string/settings_data" />
         <include android:id="@+id/mobileData" layout="@layout/item_setting" />
+        <include android:id="@+id/showPoi" layout="@layout/item_setting" />
 
         <TextView style="@style/SettingsHeader" android:text="@string/settings_about" />
         <include android:id="@+id/about" layout="@layout/item_setting" />

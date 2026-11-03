@@ -79,14 +79,15 @@ class TrackDetailActivity : AppCompatActivity() {
         }
         tile(b.distance, R.string.ride_distance, formatDistance(s.distanceMeters))
         tile(b.duration, R.string.ride_time, if (s.durationSeconds > 0) formatDuration(s.durationSeconds) else "–")
-        tile(b.avgSpeed, R.string.ride_avg_speed, if (s.movingSeconds > 0) "%.0f km/h".format(s.avgMovingSpeedKmh) else "–")
         // Nejvyšší rychlost z GPS při jízdě, u starších záznamů z bodů stopy
         val max = maxOf(s.maxSpeedKmh, (lean?.maxSpeed ?: 0.0) * 3.6)
+        // Skok polohy (ztráta signálu) by průměr z krátké doby v pohybu nafoukl nad maximum
+        val avg = if (max > 0) minOf(s.avgMovingSpeedKmh, max) else s.avgMovingSpeedKmh
+        tile(b.avgSpeed, R.string.ride_avg_speed, if (s.movingSeconds > 0) "%.0f km/h".format(avg) else "–")
         tile(b.maxSpeed, R.string.lean_max_speed, if (max > 0) "%.0f km/h".format(max) else "–")
         tile(b.moving, R.string.track_moving, if (s.movingSeconds > 0) formatDuration(s.movingSeconds) else "–")
         tile(b.ascent, R.string.track_ascent, if (s.ascentMeters > 0) "%.0f m".format(s.ascentMeters) else "–")
 
-        b.shape.points = e.track.points.map { it.latLong }
         b.btnShareImage.setOnClickListener { shareImage(e) }
         b.btnShow.setOnClickListener { finishWith(TracksActivity.ACTION_SHOW, e) }
         b.btnNavigate.setOnClickListener { finishWith(TracksActivity.ACTION_NAVIGATE, e) }

@@ -74,6 +74,8 @@ class SettingsActivity : AppCompatActivity() {
                 }
             })
         }
+        b.showPoi.title.setText(R.string.settings_poi)
+        b.showPoi.root.setOnClickListener { choosePoi() }
         b.mobileData.title.setText(R.string.settings_mobile_data)
         b.mobileData.root.setOnClickListener {
             val labels = listOf(getString(R.string.mobile_data_on), getString(R.string.mobile_data_off))
@@ -146,6 +148,26 @@ class SettingsActivity : AppCompatActivity() {
         getString(R.string.voice_number, index + 1) +
             if (voice.quality >= Voice.QUALITY_HIGH) " · " + getString(R.string.voice_high_quality) else ""
 
+    /** Seznam druhů bodů zájmu k zaškrtnutí; každá změna se uloží hned, nabídka zůstane otevřená. */
+    private fun choosePoi() {
+        GloveMenu.show(this, getString(R.string.settings_poi), MapPoi.entries.map { poi ->
+            GloveMenu.Item.checkbox(getString(poi.label), poi.layer in Settings.poiLayers) { on ->
+                Settings.poiLayers = if (on) Settings.poiLayers + poi.layer else Settings.poiLayers - poi.layer
+                refresh()
+            }
+        })
+    }
+
+    /** „Čerpací stanice, Vyhlídky, Průsmyky…“ nebo „Žádné“ – vybrané druhy v pořadí seznamu. */
+    private fun poiSummary(): String {
+        val shown = MapPoi.entries.filter { it.layer in Settings.poiLayers }.map { getString(it.label) }
+        return when {
+            shown.isEmpty() -> getString(R.string.poi_none)
+            shown.size == MapPoi.entries.size -> getString(R.string.poi_all)
+            else -> shown.joinToString(", ")
+        }
+    }
+
     private fun showVoice() {
         val engine = tts
         voiceAvailable = ttsReady && engine != null && NavVoice.apply(engine)
@@ -216,6 +238,7 @@ class SettingsActivity : AppCompatActivity() {
         val bike = Settings.bike
         b.bike.summary.text = getString(bike.label) + "\n" + getString(bike.description)
         b.language.summary.setText(Settings.language.label)
+        b.showPoi.summary.text = poiSummary()
         b.mobileData.summary.setText(if (Settings.mobileData) R.string.mobile_data_on_summary else R.string.mobile_data_off_summary)
     }
 

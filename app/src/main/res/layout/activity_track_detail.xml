@@ -31,12 +31,6 @@
             android:layout_marginBottom="8dp"
             android:textAppearance="?attr/textAppearanceBodyMedium" />
 
-        <cz.motonavigace.RouteShapeView
-            android:id="@+id/shape"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:importantForAccessibility="no" />
-
         <cz.motonavigace.LeanGaugeView
             android:id="@+id/gauge"
             android:layout_width="match_parent"

@@ -178,6 +178,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.btnDownloads.setOnClickListener { openDownloads() }
         b.btnNoMapsDownload.setOnClickListener { openDownloads() }
         b.btnLocation.setOnClickListener {
+            // Za navigace po prohlížení mapy zpět k jezdci
+            if (mapCtl.isFreeLook) return@setOnClickListener mapCtl.resumeFollow()
             val loc = lastLocation
             if (loc != null && isFresh(loc) && loc.accuracy <= PRECISE_ACCURACY) centerOnFix(loc)
             else {
@@ -281,6 +283,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
     override fun onResume() {
         super.onResume()
         mapCtl.onResume()
+        // Volba z Nastavení – ikony bodů zájmu na mapě
+        mapCtl.setPoiLayers(Settings.poiLayers)
         Downloads.refresh(this)
         reloadMapsIfChanged()
         applyBikeDefaults()

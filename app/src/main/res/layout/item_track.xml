@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Řádek seznamu Trasy a jízdy: jen datum a čas jízdy (u importované trasy její název);
+<!-- Řádek seznamu Uložené jízdy: jen datum a čas jízdy (u importované trasy její název);
      podrobnosti jsou po ťuknutí v detailu jízdy -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
