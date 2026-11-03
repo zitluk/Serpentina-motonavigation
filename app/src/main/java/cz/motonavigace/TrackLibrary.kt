@@ -14,13 +14,30 @@ object TrackLibrary {
     @Volatile
     var lastRecorded: File? = null
 
-    data class Entry(val file: File, val track: GpxTrack, val stats: TrackStats) {
+    data class Entry(
+        val file: File, val track: GpxTrack, val stats: TrackStats,
+        /** Náklon, rychlosti a zrychlení zaznamenané jízdy; u importovaných tras null. */
+        val lean: LeanStats? = null,
+    ) {
         val title get() = track.name ?: file.nameWithoutExtension
+        /** Vlastní zaznamenaná jízda (ne importovaná trasa). */
+        val isRide get() = file.name.startsWith("jizda-")
+        /** Začátek jízdy – čas prvního bodu, jinak čas souboru. */
+        val startTime get() = track.points.firstOrNull()?.time?.takeIf { it > 0 } ?: file.lastModified()
     }
+
+    /** Údaje z měřáku náklonu k jízdě (vedle GPX, aby je sdílení GPX neneslo). */
+    fun leanFile(gpx: File) = File(gpx.path.removeSuffix(".gpx") + ".lean")
 
     suspend fun load(file: File): Entry = withContext(Dispatchers.IO) {
         val track = Gpx.parse(file)
-        Entry(file, track, Gpx.stats(track.points))
+        val lean = leanFile(file).takeIf { it.isFile }?.let { runCatching { LeanStats.decode(it.readText()) }.getOrNull() }
+        Entry(file, track, Gpx.stats(track.points), lean)
+    }
+
+    fun delete(e: Entry) {
+        e.file.delete()
+        leanFile(e.file).delete()
     }
 
     suspend fun loadAll(): List<Entry> = withContext(Dispatchers.IO) {

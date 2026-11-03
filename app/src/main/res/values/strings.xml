@@ -53,6 +53,13 @@
     <string name="track_share">Sdílet GPX</string>
     <string name="track_delete_confirm">Opravdu smazat?</string>
     <string name="track_hide">Skrýt zobrazenou trasu</string>
+    <string name="share_image">Sdílet jako obrázek</string>
+    <string name="share_image_brand">Serpentina – offline motonavigace</string>
+    <string name="share_image_text">Moje jízda %1$s · %2$s · Serpentina</string>
+    <string name="track_detail_title">Jízda</string>
+    <string name="track_no_lean">Tahle jízda je ze starší verze aplikace – náklon a zrychlení u ní nejsou.</string>
+    <string name="track_moving">V pohybu</string>
+    <string name="track_ascent">Stoupání</string>
     <string name="kind_recorded">Zaznamenaná jízda</string>
     <string name="kind_track">Importovaná stopa</string>
     <string name="kind_route">Importovaná trasa</string>
@@ -98,7 +105,7 @@
     <string name="lean_reset">Vynulovat</string>
     <string name="lean_reset_confirm">Vynulovat zaznamenaná maxima?</string>
     <string name="lean_calibrated">Současná poloha je teď 0°</string>
-    <string name="lean_hint">Telefon upevni na řídítka na výšku. Před jízdou postav motocykl rovně a klepni na Kalibrovat. Maxima se zaznamenávají jen za jízdy (nad 11 km/h). Zrychlení je v násobcích g.</string>
+    <string name="lean_hint">Telefon upevni na řídítka na výšku. Před jízdou postav motocykl rovně a klepni na Kalibrovat. Maxima se zaznamenávají jen za jízdy (nad 11 km/h). Zrychlení je v násobcích g. Maxima platí do zavření obrazovky – zaznamenané jízdy je mají uložené v Trasách a jízdách.</string>
     <string name="lean_no_gyro">Telefon nemá gyroskop – náklon v zatáčce bude jen přibližný.</string>
     <string name="downloading">Stahuje se %1$d/%2$d</string>
     <string name="partially_downloaded">Částečně staženo %1$d/%2$d</string>

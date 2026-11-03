@@ -9,11 +9,9 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import cz.motonavigace.databinding.ActivityTracksBinding
 import cz.motonavigace.databinding.ItemTrackBinding
 import kotlinx.coroutines.launch
@@ -30,6 +28,12 @@ class TracksActivity : AppCompatActivity() {
         const val EXTRA_PATH = "path"
         const val ACTION_SHOW = "show"
         const val ACTION_NAVIGATE = "navigate"
+
+        /** „3. 11. 2026 13:45“ podle jazyka a formátu času v telefonu. */
+        fun rideDate(context: android.content.Context, e: TrackLibrary.Entry): String {
+            val d = Date(e.startTime)
+            return DateFormat.getMediumDateFormat(context).format(d) + " " + DateFormat.getTimeFormat(context).format(d)
+        }
     }
 
     private lateinit var b: ActivityTracksBinding
@@ -73,41 +77,19 @@ class TracksActivity : AppCompatActivity() {
         }
     }
 
-    private fun finishWith(action: String, e: TrackLibrary.Entry) {
-        setResult(RESULT_OK, Intent().putExtra(EXTRA_ACTION, action).putExtra(EXTRA_PATH, e.file.path))
-        finish()
+    /** Detail jízdy; zobrazení nebo navigaci po trase předá dál do MainActivity, po smazání obnoví seznam. */
+    private val detail = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data
+        if (result.resultCode == RESULT_OK && data?.getStringExtra(EXTRA_ACTION) != null) {
+            setResult(RESULT_OK, data)
+            finish()
+        } else {
+            reload()
+        }
     }
 
-    private fun showActions(e: TrackLibrary.Entry) {
-        GloveMenu.show(this, e.title, listOf(
-            GloveMenu.Item(getString(R.string.track_show)) { finishWith(ACTION_SHOW, e) },
-            GloveMenu.Item(getString(R.string.track_navigate)) { finishWith(ACTION_NAVIGATE, e) },
-            GloveMenu.Item(getString(R.string.track_share)) { share(e) },
-            GloveMenu.Item(getString(R.string.delete)) { confirmDelete(e) },
-        ))
-    }
-
-    private fun share(e: TrackLibrary.Entry) {
-        val uri = FileProvider.getUriForFile(this, "$packageName.files", e.file)
-        val send = Intent(Intent.ACTION_SEND)
-            .setType("application/gpx+xml")
-            .putExtra(Intent.EXTRA_STREAM, uri)
-            .putExtra(Intent.EXTRA_SUBJECT, e.title)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        startActivity(Intent.createChooser(send, getString(R.string.track_share)))
-    }
-
-    private fun confirmDelete(e: TrackLibrary.Entry) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(e.title)
-            .setMessage(R.string.track_delete_confirm)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.delete) { _, _ ->
-                e.file.delete()
-                reload()
-            }
-            .show()
-    }
+    private fun openDetail(e: TrackLibrary.Entry) =
+        detail.launch(Intent(this, TrackDetailActivity::class.java).putExtra(EXTRA_PATH, e.file.path))
 
     private inner class Adapter : RecyclerView.Adapter<Adapter.Holder>() {
         inner class Holder(val b: ItemTrackBinding) : RecyclerView.ViewHolder(b.root)
@@ -119,21 +101,10 @@ class TracksActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: Holder, position: Int) {
             val e = entries[position]
-            val ctx = this@TracksActivity
-            val time = e.track.points.first().time.takeIf { it > 0 } ?: e.file.lastModified()
-            val date = DateFormat.getMediumDateFormat(ctx).format(Date(time)) + " " +
-                DateFormat.getTimeFormat(ctx).format(Date(time))
-            val kind = getString(
-                when {
-                    e.file.name.startsWith("jizda-") -> R.string.kind_recorded
-                    e.track.isRoute -> R.string.kind_route
-                    else -> R.string.kind_track
-                }
-            )
-            holder.b.title.text = e.title
-            holder.b.kind.text = "$kind · $date"
-            holder.b.stats.text = TrackLibrary.describe(e)
-            holder.b.root.setOnClickListener { showActions(e) }
+            // Jízda jen datem a časem, importovaná trasa svým názvem; údaje jsou v detailu
+            holder.b.title.text = if (e.isRide) rideDate(this@TracksActivity, e) else e.title
+            holder.b.icon.setImageResource(if (e.isRide) R.drawable.ic_record else R.drawable.ic_route)
+            holder.b.root.setOnClickListener { openDetail(e) }
         }
     }
 }

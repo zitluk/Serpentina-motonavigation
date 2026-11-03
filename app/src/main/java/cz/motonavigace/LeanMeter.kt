@@ -12,7 +12,28 @@ data class LeanStats(
     val maxSpeed: Double = 0.0,
     val maxAccel: Double = 0.0,
     val maxBrake: Double = 0.0,
-)
+) {
+    /** Zápis do souboru vedle GPX jízdy (řádky klíč=hodnota, nezávislé na jazyce). */
+    fun encode(): String = listOf(
+        "maxLeft" to maxLeft, "maxRight" to maxRight, "maxSpeed" to maxSpeed,
+        "maxAccel" to maxAccel, "maxBrake" to maxBrake,
+    ).joinToString("\n") { (k, v) -> "$k=${"%.3f".format(java.util.Locale.ROOT, v)}" }
+
+    companion object {
+        /** Opak [encode]; neznámé nebo poškozené řádky přeskočí, null = soubor bez údajů. */
+        fun decode(text: String): LeanStats? {
+            val v = text.lines().mapNotNull { line ->
+                val eq = line.indexOf('=')
+                if (eq > 0) line.substring(0, eq).trim() to line.substring(eq + 1).trim().toDoubleOrNull() else null
+            }.filter { it.second != null }.associate { it.first to it.second!! }
+            if (v.isEmpty()) return null
+            return LeanStats(
+                maxLeft = v["maxLeft"] ?: 0.0, maxRight = v["maxRight"] ?: 0.0, maxSpeed = v["maxSpeed"] ?: 0.0,
+                maxAccel = v["maxAccel"] ?: 0.0, maxBrake = v["maxBrake"] ?: 0.0,
+            )
+        }
+    }
+}
 
 /**
  * Výpočet náklonu motorky z telefonu upevněného na řídítkách na výšku (displejem k jezdci).

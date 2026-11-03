@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <external-files-path name="tracks" path="tracks/" />
+    <!-- Obrázek jízdy ke sdílení (přepisuje se, v mezipaměti) -->
+    <cache-path name="share" path="share/" />
 </paths>

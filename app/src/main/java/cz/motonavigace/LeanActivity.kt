@@ -1,7 +1,6 @@
 package cz.motonavigace
 
 import android.Manifest
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.location.Location
@@ -18,7 +17,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -33,7 +31,6 @@ import kotlin.math.roundToInt
 class LeanActivity : AppCompatActivity(), LocationListener {
 
     private lateinit var b: ActivityLeanBinding
-    private lateinit var prefs: SharedPreferences
     private lateinit var meter: LeanMeter
     private lateinit var sensors: LeanSensors
 
@@ -49,8 +46,8 @@ class LeanActivity : AppCompatActivity(), LocationListener {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        prefs = getSharedPreferences("lean", MODE_PRIVATE)
-        meter = LeanMeter(LeanSensors.calibration(this), LeanSensors.loadStats(this))
+        // Maxima se měří vždy od otevření obrazovky; jízdy si je ukládají samy (Trasy a jízdy)
+        meter = LeanMeter(LeanSensors.calibration(this))
         sensors = LeanSensors(this, meter, ::displayRotation)
 
         b.maxLeft.label.setText(R.string.lean_max_left)
@@ -66,14 +63,14 @@ class LeanActivity : AppCompatActivity(), LocationListener {
 
         b.btnCalibrate.setOnClickListener {
             meter.calibrate()
-            prefs.edit { putFloat("calibration", meter.calibration.toFloat()) }
+            LeanSensors.saveCalibration(this, meter.calibration)
             Toast.makeText(this, R.string.lean_calibrated, Toast.LENGTH_SHORT).show()
         }
         b.btnReset.setOnClickListener {
             MaterialAlertDialogBuilder(this)
                 .setMessage(R.string.lean_reset_confirm)
                 .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.lean_reset) { _, _ -> meter.resetStats(); saveStats(); render() }
+                .setPositiveButton(R.string.lean_reset) { _, _ -> meter.resetStats(); render() }
                 .show()
         }
         adaptToScreen()
@@ -112,7 +109,6 @@ class LeanActivity : AppCompatActivity(), LocationListener {
         super.onPause()
         sensors.stop()
         getSystemService(LocationManager::class.java).removeUpdates(this)
-        saveStats()
     }
 
     private fun startLocation() {
@@ -176,6 +172,4 @@ class LeanActivity : AppCompatActivity(), LocationListener {
     private fun degrees(v: Double) = "${v.roundToInt()}°"
     private fun kmh(mps: Double) = "${(mps * 3.6).roundToInt()} km/h"
     private fun gForce(a: Double) = "%.2f g".format(abs(a) / LeanMeter.G).let { if (a < -0.05) "−$it" else it }
-
-    private fun saveStats() = LeanSensors.saveStats(this, meter.stats)
 }

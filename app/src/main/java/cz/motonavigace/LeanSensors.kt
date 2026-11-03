@@ -68,27 +68,16 @@ class LeanSensors(context: Context, private val meter: LeanMeter, private val ro
     companion object {
         private const val PREFS = "lean"
 
-        /** Kalibrace a celková maxima, která ukazuje obrazovka Náklon. */
+        /** Kalibrace náklonu (maxima se neukládají – měří se vždy od otevření obrazovky nebo jízdy). */
         fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
         fun calibration(context: Context) = prefs(context).getFloat("calibration", 0f).toDouble()
 
-        fun loadStats(context: Context) = prefs(context).let { p ->
-            LeanStats(
-                maxLeft = p.getFloat("max_left", 0f).toDouble(),
-                maxRight = p.getFloat("max_right", 0f).toDouble(),
-                maxSpeed = p.getFloat("max_speed", 0f).toDouble(),
-                maxAccel = p.getFloat("max_accel", 0f).toDouble(),
-                maxBrake = p.getFloat("max_brake", 0f).toDouble(),
-            )
-        }
+        fun saveCalibration(context: Context, value: Double) = prefs(context).edit { putFloat("calibration", value.toFloat()) }
 
-        fun saveStats(context: Context, s: LeanStats) = prefs(context).edit {
-            putFloat("max_left", s.maxLeft.toFloat())
-            putFloat("max_right", s.maxRight.toFloat())
-            putFloat("max_speed", s.maxSpeed.toFloat())
-            putFloat("max_accel", s.maxAccel.toFloat())
-            putFloat("max_brake", s.maxBrake.toFloat())
-        }
+        /** Otočení výchozího displeje – pro službu záznamu, která vlastní okno nemá. */
+        fun displayRotation(context: Context): Int =
+            context.getSystemService(android.hardware.display.DisplayManager::class.java)
+                ?.getDisplay(android.view.Display.DEFAULT_DISPLAY)?.rotation ?: android.view.Surface.ROTATION_0
     }
 }

@@ -84,6 +84,10 @@ class RecordingService : Service(), LocationListener {
         private const val MIN_DISTANCE_M = 5.0
 
         private val journal get() = File(Storage.tracksDir, ".recording.csv")
+        /** Maxima náklonu rozpracované jízdy (průběžně přepisovaná, ať se neztratí při pádu). */
+        private val leanJournal get() = File(Storage.tracksDir, ".recording.lean")
+        /** Jak často se maxima náklonu zapíšou (počet poloh z GPS). */
+        private const val LEAN_SAVE_EVERY = 10
 
         /** Dokončí záznam, který zůstal po pádu nebo ukončení aplikace. */
         fun recoverUnfinished(): File? {
@@ -94,12 +98,21 @@ class RecordingService : Service(), LocationListener {
         private fun finishJournal(): File? {
             val points = readJournal()
             journal.delete()
-            if (points.size < 2) return null
+            if (points.size < 2) {
+                leanJournal.delete()
+                return null
+            }
             val start = Date(points.first().time)
             val name = (if (Settings.isEnglish()) "Ride " else "Jízda ") +
                 SimpleDateFormat("d. M. yyyy HH:mm", Locale.ROOT).format(start)
             val file = File(Storage.tracksDir, "jizda-" + SimpleDateFormat("yyyy-MM-dd-HHmm", Locale.ROOT).format(start) + ".gpx")
             Gpx.write(file, name, points)
+            // Náklon, rychlosti a zrychlení jízdy vedle GPX (GPX je sdílí bez nich)
+            if (leanJournal.isFile) {
+                val lean = TrackLibrary.leanFile(file)
+                lean.delete()
+                if (!leanJournal.renameTo(lean)) leanJournal.delete()
+            }
             return file
         }
 
@@ -113,6 +126,10 @@ class RecordingService : Service(), LocationListener {
     }
 
     private var last: TrackPoint? = null
+    /** Náklon se měří celou jízdu i se zhasnutou obrazovkou. */
+    private var leanMeter: LeanMeter? = null
+    private var leanSensors: LeanSensors? = null
+    private var fixesSinceLeanSave = 0
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -136,6 +153,12 @@ class RecordingService : Service(), LocationListener {
         val resumed = readJournal()
         last = resumed.lastOrNull()
         Recording.reset(resumed.firstOrNull()?.time ?: System.currentTimeMillis(), resumed)
+        // Maxima z přerušené části jízdy navazují
+        val previous = if (resumed.isNotEmpty() && leanJournal.isFile) LeanStats.decode(leanJournal.readText()) else null
+        if (resumed.isEmpty()) leanJournal.delete()
+        val meter = LeanMeter(LeanSensors.calibration(this), previous ?: LeanStats())
+        leanMeter = meter
+        leanSensors = LeanSensors(this, meter) { LeanSensors.displayRotation(this) }.also { it.start() }
         runCatching {
             getSystemService(LocationManager::class.java)
                 .requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, this)
@@ -144,6 +167,10 @@ class RecordingService : Service(), LocationListener {
 
     private fun stopRecording() {
         getSystemService(LocationManager::class.java).removeUpdates(this)
+        leanSensors?.stop()
+        leanSensors = null
+        saveLean()
+        leanMeter = null
         val file = finishJournal()
         Recording.finish()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -151,7 +178,21 @@ class RecordingService : Service(), LocationListener {
         file?.let { TrackLibrary.lastRecorded = it }
     }
 
+    private fun saveLean() {
+        leanMeter?.let { runCatching { leanJournal.writeText(it.stats.encode()) } }
+    }
+
+    override fun onDestroy() {
+        leanSensors?.stop()
+        super.onDestroy()
+    }
+
     override fun onLocationChanged(location: Location) {
+        // Rychlost pro výpočet náklonu a zrychlení i z méně přesných poloh
+        leanMeter?.let { m ->
+            if (location.hasSpeed()) m.onSpeed(location.speed.toDouble(), location.elapsedRealtimeNanos)
+            if (++fixesSinceLeanSave >= LEAN_SAVE_EVERY) { fixesSinceLeanSave = 0; saveLean() }
+        }
         if (location.hasAccuracy() && location.accuracy > MAX_ACCURACY_M) return
         val p = TrackPoint(
             location.latitude, location.longitude,

@@ -27,6 +27,9 @@ class LeanGaugeView @JvmOverloads constructor(context: Context, attrs: Attribute
         set(value) { field = value; invalidate() }
     var maxRight = 0.0
         set(value) { field = value; invalidate() }
+    /** false = bez ručičky a současného náklonu (detail uložené jízdy), jen maxima. */
+    var showValue = true
+        set(value) { field = value; invalidate() }
 
     private val density = resources.displayMetrics.density
     private val onSurface = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface)
@@ -86,6 +89,18 @@ class LeanGaugeView @JvmOverloads constructor(context: Context, attrs: Attribute
         maxPaint.strokeWidth = stroke * 0.7f
         if (maxLeft > 0.5) drawRadial(canvas, cx, cy, -maxLeft.toFloat().coerceAtMost(RANGE), radius - stroke, radius + stroke * 0.6f, maxPaint)
         if (maxRight > 0.5) drawRadial(canvas, cx, cy, maxRight.toFloat().coerceAtMost(RANGE), radius - stroke, radius + stroke * 0.6f, maxPaint)
+
+        if (!showValue) {
+            // Záznam jízdy: místo současného náklonu dvě ručičky na maximálním náklonu vlevo a vpravo
+            maxPaint.strokeWidth = stroke * 0.45f
+            drawRadial(canvas, cx, cy, -maxLeft.toFloat().coerceIn(0f, RANGE + 5), 0f, radius - stroke * 1.2f, maxPaint)
+            drawRadial(canvas, cx, cy, maxRight.toFloat().coerceIn(0f, RANGE + 5), 0f, radius - stroke * 1.2f, maxPaint)
+            canvas.drawCircle(cx, cy, stroke * 0.8f, maxPaint)
+            valuePaint.textSize = radius * 0.24f
+            val text = "L ${maxLeft.roundToInt()}°   P ${maxRight.roundToInt()}°"
+            canvas.drawText(text, cx, cy + valuePaint.textSize * 1.3f, valuePaint)
+            return
+        }
 
         // Ručička ze středu, natočená jako motorka
         needlePaint.strokeWidth = stroke * 0.55f

@@ -405,6 +405,12 @@
             android:theme="@style/Theme.Motonavigace.WithActionBar" />
 
         <activity
+            android:name=".TrackDetailActivity"
+            android:label="@string/track_detail_title"
+            android:parentActivityName=".TracksActivity"
+            android:theme="@style/Theme.Motonavigace.WithActionBar" />
+
+        <activity
             android:name=".LeanActivity"
             android:label="@string/lean_title"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"

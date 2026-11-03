@@ -1254,7 +1254,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         rideTracker?.onFix(pos, location.accuracy, location.speed, location.time)
     }
 
-    /** Ukončí měření; maxima z jízdy se přidají k rekordům na obrazovce Náklon. */
+    /** Ukončí měření a vrátí souhrn jízdy (trvale se jízda ukládá jen se záznamem jízdy). */
     private fun finishRide(): RideSummary? {
         val meter = rideMeter ?: return null
         rideSensors?.stop()
@@ -1262,15 +1262,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         rideMeter = null
         rideSensors = null
         rideTracker = null
-        val s = meter.stats
-        val best = LeanSensors.loadStats(this)
-        LeanSensors.saveStats(this, LeanStats(
-            maxLeft = maxOf(best.maxLeft, s.maxLeft),
-            maxRight = maxOf(best.maxRight, s.maxRight),
-            maxSpeed = maxOf(best.maxSpeed, s.maxSpeed),
-            maxAccel = maxOf(best.maxAccel, s.maxAccel),
-            maxBrake = maxOf(best.maxBrake, s.maxBrake),
-        ))
         return summary?.takeIf { it.distanceMeters >= MIN_RIDE_SUMMARY_METERS }
     }
 

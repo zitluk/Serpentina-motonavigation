@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Detail jízdy ve vzhledu obrazovky Náklon motocyklu: ukazatel s maximálním náklonem,
+     pod ním dlaždice s údaji o jízdě a velká tlačítka akcí (do rukavic) -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:layout_marginBottom="4dp"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/kind"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:layout_marginBottom="8dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <cz.motonavigace.RouteShapeView
+            android:id="@+id/shape"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:importantForAccessibility="no" />
+
+        <cz.motonavigace.LeanGaugeView
+            android:id="@+id/gauge"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="480dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/leanRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <include android:id="@+id/maxLeft" layout="@layout/item_stat" />
+                <include android:id="@+id/maxRight" layout="@layout/item_stat" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <include android:id="@+id/distance" layout="@layout/item_stat" />
+                <include android:id="@+id/duration" layout="@layout/item_stat" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <include android:id="@+id/avgSpeed" layout="@layout/item_stat" />
+                <include android:id="@+id/maxSpeed" layout="@layout/item_stat" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/accelRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <include android:id="@+id/maxAccel" layout="@layout/item_stat" />
+                <include android:id="@+id/maxBrake" layout="@layout/item_stat" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <include android:id="@+id/moving" layout="@layout/item_stat" />
+                <include android:id="@+id/ascent" layout="@layout/item_stat" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/noLean"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/track_no_lean"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:visibility="gone" />
+
+            <!-- Podpis na sdíleném obrázku jízdy (jinak skrytý) -->
+            <TextView
+                android:id="@+id/brand"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="@string/share_image_brand"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/btnShareImage"
+                    style="@style/Glove.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/share_image" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:baselineAligned="false">
+
+                    <Button
+                        android:id="@+id/btnShow"
+                        style="@style/Glove.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:text="@string/track_show" />
+
+                    <Button
+                        android:id="@+id/btnNavigate"
+                        style="@style/Glove.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:text="@string/track_navigate" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:baselineAligned="false">
+
+                    <Button
+                        android:id="@+id/btnShare"
+                        style="@style/Glove.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:text="@string/track_share" />
+
+                    <Button
+                        android:id="@+id/btnDelete"
+                        style="@style/Glove.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:text="@string/delete" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

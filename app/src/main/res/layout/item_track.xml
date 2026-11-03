@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Řádek seznamu Trasy a jízdy: jen datum a čas jízdy (u importované trasy její název);
+     podrobnosti jsou po ťuknutí v detailu jízdy -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
     android:gravity="center_vertical"
     android:minHeight="72dp"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:paddingHorizontal="16dp"
     android:paddingVertical="10dp">
 
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginEnd="16dp"
+        android:importantForAccessibility="no"
+        app:tint="?attr/colorPrimary" />
+
     <TextView
         android:id="@+id/title"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceTitleMedium" />
-
-    <TextView
-        android:id="@+id/kind"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodySmall" />
-
-    <TextView
-        android:id="@+id/stats"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceBodyMedium" />
+        android:layout_weight="1"
+        android:textAppearance="?attr/textAppearanceTitleLarge" />
 </LinearLayout>

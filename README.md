@@ -18,7 +18,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - **Projížďka po okolí** – okruh zvolené délky (20–300 km) z aktuální polohy, „Jiný okruh“ vylosuje jiný směr
 - **Poloha motorky** – po ukončení navigace si aplikace pamatuje, kde motorka stojí; při dalším spuštění dál než 20 m od ní nabídne navigaci k motorce (na mapě se pak ukazuje chodec)
 - **Záznam jízdy** do GPX (i se zhasnutou obrazovkou) se statistikami: vzdálenost, čas, průměrná a max. rychlost, stoupání
-- **Náklon motocyklu** – ukazatel náklonu, maximální náklon vlevo/vpravo, rychlost, zrychlení a brzdění v g; při každé navigaci se měří automaticky a po jejím ukončení aplikace nabídne souhrn jízdy (vzdálenost, čas, průměrná a max. rychlost, max. náklon, zrychlení a brzdění)
+- **Náklon motocyklu** – ukazatel náklonu, maximální náklon vlevo/vpravo, rychlost, zrychlení a brzdění v g (maxima platí do zavření obrazovky); záznam jízdy si je ukládá ke každé jízdě; při každé navigaci se měří automaticky a po jejím ukončení aplikace nabídne souhrn jízdy (vzdálenost, čas, průměrná a max. rychlost, max. náklon, zrychlení a brzdění)
 - **GPX** – import, zobrazení, navigace po stopě, sdílení
 - **Ovládání v rukavicích** – velká tlačítka v celé aplikaci, menu a volby přes celou šířku displeje
 - **Ikona polohy** – šipka nebo silueta motocyklu (sportovní, cestovní, naked, enduro, chopper, skútr) v 8 barvách, natočená po směru jízdy
@@ -35,7 +35,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - Tlačítko **3D / 2D / N** vpravo nahoře přepíná zobrazení mapy, tlačítko polohy vycentruje mapu na tvoji polohu. Dokud GPS nezná přesnou polohu, ukazuje se „Prosím počkejte na přesnou polohu“
 - Menu ☰ → **Projížďka po okolí** → zvol délku → Vytvořit; Obrátit pojede okruh opačně
 - Menu ☰ → **Spustit záznam jízdy** (červený štítek REC na mapě, ťuknutím záznam zastavíš)
-- Menu ☰ → **Trasy a jízdy** → Zobrazit / Navigovat po trase / Sdílet / Smazat
+- Menu ☰ → **Trasy a jízdy** – seznam jízd podle data a času; ťuknutím detail jízdy s náklonem, vzdáleností, časy, rychlostmi, zrychlením a stoupáním (s obrysem trasy) → Sdílet jako obrázek / Zobrazit na mapě / Navigovat po trase / Sdílet GPX / Smazat
 - Navigace po GPX naplánuje trasu po silnicích přes body vybrané ze stopy, takže má pokyny i přepočet
 - Během navigace: další manévr nahoře, rychlost, příjezd a zbývající km dole, **Ukončit** (nebo tlačítko Zpět)
 - Mapy se stahují v aplikaci (**Stažení map**) po zemích z celého světa, velké země i po částech (např. Itálie – Isole = Sardinie a Sicílie): mapa, body zájmu i data pro trasy. Zemi najdeš polem **Hledat zemi** (česky i anglicky, s diakritikou i bez), u každé je vidět přibližná velikost. U stažené mapy se ukazuje datum dat a při novější verzi tlačítko Aktualizovat

@@ -50,6 +50,13 @@
     <string name="track_share">Share GPX</string>
     <string name="track_delete_confirm">Really delete?</string>
     <string name="track_hide">Hide displayed route</string>
+    <string name="share_image">Share as image</string>
+    <string name="share_image_brand">Serpentina – offline motorcycle navigation</string>
+    <string name="share_image_text">My ride %1$s · %2$s · Serpentina</string>
+    <string name="track_detail_title">Ride</string>
+    <string name="track_no_lean">This ride is from an older app version – lean angle and acceleration are not available.</string>
+    <string name="track_moving">Moving</string>
+    <string name="track_ascent">Ascent</string>
     <string name="kind_recorded">Recorded ride</string>
     <string name="kind_track">Imported track</string>
     <string name="kind_route">Imported route</string>
@@ -95,7 +102,7 @@
     <string name="lean_reset">Reset</string>
     <string name="lean_reset_confirm">Reset the recorded maximums?</string>
     <string name="lean_calibrated">The current position is now 0°</string>
-    <string name="lean_hint">Mount the phone upright on the handlebars. Before riding, hold the bike upright and tap Calibrate. Maximums are recorded only while riding (above 11 km/h). Acceleration is in g.</string>
+    <string name="lean_hint">Mount the phone upright on the handlebars. Before riding, hold the bike upright and tap Calibrate. Maximums are recorded only while riding (above 11 km/h). Acceleration is in g. Maximums last until you close this screen – recorded rides keep theirs in Routes and rides.</string>
     <string name="lean_no_gyro">This phone has no gyroscope – lean in corners will only be approximate.</string>
     <string name="downloading">Downloading %1$d/%2$d</string>
     <string name="partially_downloaded">Partially downloaded %1$d/%2$d</string>
