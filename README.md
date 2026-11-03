@@ -23,7 +23,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - **Ovládání v rukavicích** – velká tlačítka v celé aplikaci, menu a volby přes celou šířku displeje
 - **Ikona polohy** – šipka nebo silueta motocyklu (sportovní, cestovní, naked, enduro, chopper, skútr) v 8 barvách, natočená po směru jízdy
 - **Výrobce motocyklu** změní ikonu aplikace i úvodní logo přes celou šířku displeje; typ motocyklu přednastaví typ trasy, šotolinu, dálnice a odhad času
-- **Nastavení** – světlý / tmavý vzhled, jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), vypnutí mobilních dat (stahování, kontrola aktualizací a zpětná vazba jen přes Wi-Fi)
+- **Nastavení** – světlý / tmavý vzhled, jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), výběr hlasu navigace s ukázkou (nebo bez hlasu), vypnutí mobilních dat (stahování, kontrola aktualizací a zpětná vazba jen přes Wi-Fi)
 - **Zpětná vazba** vývojáři přímo z aplikace a možnost drobné podpory přes QR Platbu
 - **Sdílení aplikace** – QR kód s odkazem ke stažení v Nastavení, nebo odeslání odkazu zprávou
 

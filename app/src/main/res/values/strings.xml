@@ -148,6 +148,15 @@
     <string name="language_system">Podle systému</string>
     <string name="language_czech">Čeština</string>
     <string name="language_english">English</string>
+    <string name="settings_voice">Hlas navigace</string>
+    <string name="voice_loading">Zjišťuji hlasy v telefonu…</string>
+    <string name="voice_default">Výchozí hlas telefonu</string>
+    <string name="voice_off">Bez hlasu – jen pokyny na displeji</string>
+    <string name="voice_number">Hlas %1$d</string>
+    <string name="voice_high_quality">vysoká kvalita</string>
+    <string name="voice_missing">Hlas pro jazyk navigace v telefonu chybí – ťuknutím ho stáhnete</string>
+    <string name="voice_no_engine">V telefonu není hlasový výstup (převod textu na řeč)</string>
+    <string name="voice_sample">Za 200 metrů odbočte vpravo</string>
     <string name="settings_night_map">Noční mapa</string>
     <string name="night_map_auto">Automaticky podle západu slunce</string>
     <string name="night_map_theme">Podle vzhledu aplikace</string>

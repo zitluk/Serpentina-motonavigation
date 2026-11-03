@@ -6,6 +6,8 @@ import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
+import android.speech.tts.Voice
 import android.text.method.LinkMovementMethod
 import android.util.Patterns
 import android.view.View
@@ -25,6 +27,11 @@ import kotlinx.coroutines.launch
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var b: ActivitySettingsBinding
+    /** Hlasový výstup jen pro výběr hlasu a ukázku. */
+    private var tts: TextToSpeech? = null
+    private var ttsReady = false
+    /** Hlas pro jazyk navigace je v telefonu (jinak nabídneme stažení hlasových dat). */
+    private var voiceAvailable = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +51,13 @@ class SettingsActivity : AppCompatActivity() {
         b.manufacturer.title.setText(R.string.settings_manufacturer)
         b.bike.title.setText(R.string.settings_bike_type)
         b.language.title.setText(R.string.settings_language_app)
+        b.voice.title.setText(R.string.settings_voice)
+        b.voice.summary.setText(R.string.voice_loading)
+        b.voice.root.setOnClickListener { chooseVoice() }
+        tts = TextToSpeech(this) { status ->
+            ttsReady = status == TextToSpeech.SUCCESS
+            runOnUiThread { showVoice() }
+        }
         b.markerShape.title.setText(R.string.marker_shape)
         b.markerColor.title.setText(R.string.marker_color)
         b.markerShape.root.setOnClickListener {
@@ -120,6 +134,58 @@ class SettingsActivity : AppCompatActivity() {
         }
         b.about.root.setOnClickListener { showAbout() }
         refresh()
+    }
+
+    override fun onDestroy() {
+        tts?.shutdown()
+        super.onDestroy()
+    }
+
+    /** Popisek hlasu: „Hlas 2 · vysoká kvalita“ – názvy hlasů od systému nic neřeknou. */
+    private fun voiceLabel(index: Int, voice: Voice): String =
+        getString(R.string.voice_number, index + 1) +
+            if (voice.quality >= Voice.QUALITY_HIGH) " · " + getString(R.string.voice_high_quality) else ""
+
+    private fun showVoice() {
+        val engine = tts
+        voiceAvailable = ttsReady && engine != null && NavVoice.apply(engine)
+        b.voice.summary.text = when {
+            !ttsReady -> getString(R.string.voice_no_engine)
+            !voiceAvailable -> getString(R.string.voice_missing)
+            !NavVoice.enabled -> getString(R.string.voice_off)
+            else -> {
+                val voices = NavVoice.voices(engine!!)
+                val i = voices.indexOfFirst { it.name == Settings.voice }
+                if (i >= 0) voiceLabel(i, voices[i]) else getString(R.string.voice_default)
+            }
+        }
+    }
+
+    private fun chooseVoice() {
+        val engine = tts
+        if (!ttsReady || engine == null) {
+            Toast.makeText(this, R.string.voice_no_engine, Toast.LENGTH_LONG).show()
+            return
+        }
+        if (!voiceAvailable) {
+            // Hlas pro jazyk navigace chybí – otevře stažení hlasových dat v nastavení telefonu
+            runCatching { startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
+            return
+        }
+        fun pick(value: String) {
+            Settings.voice = value
+            NavVoice.apply(engine)
+            showVoice()
+            // Ukázka hned po výběru, ať je slyšet, jak hlas zní
+            if (value != NavVoice.OFF) engine.speak(getString(R.string.voice_sample), TextToSpeech.QUEUE_FLUSH, null, "sample")
+        }
+        val current = Settings.voice
+        val items = mutableListOf(GloveMenu.Item(getString(R.string.voice_default), current.isEmpty()) { pick("") })
+        NavVoice.voices(engine).forEachIndexed { i, v ->
+            items += GloveMenu.Item(voiceLabel(i, v), v.name == current) { pick(v.name) }
+        }
+        items += GloveMenu.Item(getString(R.string.voice_off), current == NavVoice.OFF) { pick(NavVoice.OFF) }
+        GloveMenu.show(this, getString(R.string.settings_voice), items)
     }
 
     override fun onSupportNavigateUp(): Boolean {

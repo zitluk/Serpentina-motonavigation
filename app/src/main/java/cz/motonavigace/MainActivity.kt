@@ -56,7 +56,6 @@ import org.mapsforge.core.model.LatLong
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
-import java.util.Locale
 
 class MainActivity : AppCompatActivity(), LocationListener {
 
@@ -95,6 +94,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private var recalculating = false
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    /** Hlasový výstup se připojil k hlasovému modulu telefonu (jazyk jde nastavit až potom). */
+    private var ttsInitialized = false
 
     private val prefs by lazy { getSharedPreferences("main", MODE_PRIVATE) }
 
@@ -202,8 +203,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.forLanguageTag(if (Settings.isEnglish()) "en-GB" else "cs-CZ")
-                ttsReady = true
+                ttsInitialized = true
+                // Jazyk navigace a hlas zvolený v nastavení; bez hlasových dat se mlčí
+                ttsReady = tts?.let(NavVoice::apply) == true
             }
         }
 
@@ -285,6 +287,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         // Po návratu z Nastavení, kde se mohla aktualizace právě najít
         showUpdateCard()
+        // …nebo změnit hlas navigace, případně doinstalovat hlasová data
+        if (ttsInitialized) tts?.let { ttsReady = NavVoice.apply(it) }
         // Rejstřík jmen pro rychlé hledání – po stažení nebo aktualizaci mapy se na pozadí postaví znovu
         lifecycleScope.launch { SearchIndex.ensureAll() }
     }
@@ -1312,6 +1316,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.navTop.visibility = if (on) View.VISIBLE else View.GONE
         b.navPanel.visibility = if (on) View.VISIBLE else View.GONE
         if (on) b.btnNavRecord.show() else b.btnNavRecord.hide()
+        mapCtl.setRouteProgress(on)
         if (on) b.updateCard.visibility = View.GONE else showUpdateCard()
         stopNavigationOnBack.isEnabled = on
         if (on) {
@@ -1337,6 +1342,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val heading = if (!state.offRoute) state.routeBearing
             else location.bearing.takeIf { location.hasBearing() && location.speed > 1.5f }
         mapCtl.follow(state.snapped.takeUnless { state.offRoute } ?: pos, heading, location.speed)
+        // Trasa před jezdcem světle, za ním tmavě – mimo trasu dělení nedává smysl
+        if (!state.offRoute) mapCtl.showProgress(nav.route.points, state.segment, state.snapped)
 
         showLanes(state.next?.takeIf { state.toNext < LANES_DISTANCE && !state.offRoute })
         showManeuverArrow(state.next)
@@ -1492,7 +1499,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     /** @param queue zařadit za právě mluvený pokyn místo jeho přerušení (upozornění na radar) */
     private fun speak(text: String, queue: Boolean = false) {
-        if (ttsReady) tts?.speak(text, if (queue) TextToSpeech.QUEUE_ADD else TextToSpeech.QUEUE_FLUSH, null, text)
+        if (ttsReady && NavVoice.enabled) tts?.speak(text, if (queue) TextToSpeech.QUEUE_ADD else TextToSpeech.QUEUE_FLUSH, null, text)
     }
 
     private companion object {

@@ -70,6 +70,11 @@ object Settings {
             AppCompatDelegate.setDefaultNightMode(value.nightMode)
         }
 
+    /** Hlas navigace (Voice.name), prázdný = výchozí hlas, [NavVoice.OFF] = bez hlasu. */
+    var voice: String
+        get() = prefs.getString("voice", "").orEmpty()
+        set(value) = prefs.edit { putString("voice", value) }
+
     var nightMap: NightMap
         get() = NightMap.entries.firstOrNull { it.id == prefs.getInt("night_map", NightMap.AUTO.id) } ?: NightMap.AUTO
         set(value) = prefs.edit { putInt("night_map", value.id) }

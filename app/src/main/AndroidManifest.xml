@@ -9,6 +9,14 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Od Androidu 11 musí aplikace přiznat, že hledá hlasový modul (převod textu na řeč),
+         jinak ho TextToSpeech nenajde a navigace mlčí -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <application
         android:name=".MotoApp"
         android:icon="@mipmap/ic_launcher"

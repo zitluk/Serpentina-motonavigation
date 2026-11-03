@@ -72,6 +72,8 @@ class MapController(
     private val trackLayer = PathLayer(map, line(0xB08E24AA.toInt(), 5f))
     // Trasa tmavě modrá – červená splývala s červenými a oranžovými silnicemi, řeky jsou světle modré
     private val routeLayer = PathLayer(map, line(ROUTE_COLOR, 7f))
+    /** Projetá část trasy za navigace (pod zbývající částí). */
+    private val passedLayer = PathLayer(map, line(ROUTE_PASSED, 7f))
     /** Šipky směru jízdy na okruhu (start = cíl, jinak by nebylo poznat, kudy vyjet). */
     private var arrowBitmap = makeArrowBitmap()
     private var shownDirection: List<LatLong>? = null
@@ -118,6 +120,7 @@ class MapController(
         layers.add(LongPressLayer(onLongPress))
         layers.add(trackLayer)
         altLayers.forEach(layers::add)
+        layers.add(passedLayer)
         layers.add(routeLayer)
         layers.add(recordedLayer)
         layers.add(arrows)
@@ -176,13 +179,37 @@ class MapController(
         if (on == night) return
         night = on
         // Tmavě modrá trasa by na tmavé mapě zanikla, v noci je světlejší
-        routeLayer.setStyle(line(routeColor(), 7f))
+        applyRouteStyle()
         arrowBitmap = makeArrowBitmap()
         shownDirection?.let(::showDirection)
         if (baseLayers.isNotEmpty()) loadTheme() else map.updateMap(true)
     }
 
     private fun routeColor() = if (night) ROUTE_COLOR_NIGHT else ROUTE_COLOR
+
+    // ---------------------------------------------------------------- průběh navigace
+
+    /** Za navigace: trasa před jezdcem výrazně světle modrá, projetá část za ním tmavě modrá. */
+    private var routeProgress = false
+
+    fun setRouteProgress(on: Boolean) {
+        routeProgress = on
+        if (!on) passedLayer.clearPath()
+        applyRouteStyle()
+        map.updateMap(true)
+    }
+
+    private fun applyRouteStyle() {
+        routeLayer.setStyle(if (routeProgress) line(ROUTE_AHEAD, 8f) else line(routeColor(), 7f))
+    }
+
+    /** Rozdělí trasu v místě jezdce ([at] na úseku [segment]) na projetou a zbývající část. */
+    fun showProgress(points: List<LatLong>, segment: Int, at: LatLong) {
+        if (!routeProgress || points.size < 2) return
+        val i = segment.coerceIn(0, points.size - 2)
+        setPath(passedLayer, points.subList(0, i + 1) + at)
+        setPath(routeLayer, listOf(at) + points.subList(i + 1, points.size))
+    }
 
     private fun loadTheme() {
         val old = theme
@@ -279,7 +306,7 @@ class MapController(
     fun zoomBy(delta: Int) {
         if (navigating) {
             navZoomOffset = (navZoomOffset + delta).coerceIn(-4, 3)
-            camZoom = (camZoom + delta).coerceIn(3, 20)
+            camZoom = (camZoom + delta).coerceIn(3.0, 20.0)
             kickGlide()
             return
         }
@@ -290,6 +317,7 @@ class MapController(
 
     fun startFollowing() {
         navZoomOffset = 0
+        zoomSpeed = -1.0
         navigating = true
         map.viewport().setMapViewCenter(0f, navPivotY())
     }
@@ -307,15 +335,17 @@ class MapController(
 
     /** Kamera při navigaci: jezdec ve spodní části, mapa natočená podle režimu. */
     fun follow(p: LatLong, headingDeg: Float?, speedMps: Float) {
-        val fast = speedMps > 22
-        val auto = if (mode == MapViewMode.PERSPECTIVE_3D) (if (fast) 14 else 15) else (if (fast) 15 else 16)
+        // Rychlost z GPS kolísá – zoom se řídí vyhlazenou, ať mapa nepumpuje
+        val kmh = speedMps * 3.6
+        zoomSpeed = if (zoomSpeed < 0) kmh else zoomSpeed + (kmh - zoomSpeed) * ZOOM_SPEED_SMOOTHING
+        val auto = speedZoom(zoomSpeed) + if (mode == MapViewMode.PERSPECTIVE_3D) 0.0 else ZOOM_2D_EXTRA
         if (!camera) {
             // Kamera navazuje na to, co je právě vidět
             map.animator().cancel()
             map.mapPosition.let { camBearing = it.bearing; camTilt = it.tilt }
             camera = true
         }
-        camZoom = (auto + navZoomOffset).coerceIn(3, 20)
+        camZoom = (auto + navZoomOffset).coerceIn(3.0, 20.0)
         camTilt = if (mode == MapViewMode.PERSPECTIVE_3D) TILT_3D else 0f
         camBearing = if (mode == MapViewMode.NORTH_UP) 0f else headingDeg?.let { -it } ?: camBearing
         // Ikona jede na stejné místo jako kamera, jinak by se vůči sobě chvěly
@@ -398,7 +428,10 @@ class MapController(
 
     /** Za navigace jede kamera s ikonou; zoom, natočení a náklon plynule dobíhají k cíli. */
     private var camera = false
-    private var camZoom = 15
+    /** Úroveň přiblížení kamery, i neceločíselná – zoom se mění plynule s rychlostí. */
+    private var camZoom = 17.0
+    /** Vyhlazená rychlost pro zoom (km/h), záporná = zatím žádná. */
+    private var zoomSpeed = -1.0
     private var camBearing = 0f
     private var camTilt = 0f
 
@@ -426,7 +459,7 @@ class MapController(
         if (camera) {
             val pos = map.mapPosition
             pos.setPosition(shownLat, shownLon)
-            val targetScale = (1 shl camZoom).toDouble()
+            val targetScale = Math.pow(2.0, camZoom)
             pos.setScale(pos.scale + (targetScale - pos.scale) * CAMERA_SMOOTHING)
             pos.setBearing(approachAngle(pos.bearing, camBearing, CAMERA_SMOOTHING))
             pos.setTilt(pos.tilt + (camTilt - pos.tilt) * CAMERA_SMOOTHING)
@@ -581,8 +614,31 @@ class MapController(
 
     companion object {
         private const val TILT_3D = 55f
+
+        /**
+         * Přiblížení podle rychlosti (km/h): ve městě zblízka, ať jsou vidět odbočky,
+         * na okresce a dálnici oddálené, ať je vidět daleko dopředu. Mezi body plynule.
+         */
+        private val SPEED_ZOOM = listOf(0.0 to 18.0, 30.0 to 17.5, 50.0 to 17.0, 70.0 to 16.4, 90.0 to 15.8, 130.0 to 14.8)
+        /** Ve 2D je vidět méně dopředu než na nakloněné mapě, proto o kousek blíž. */
+        private const val ZOOM_2D_EXTRA = 0.5
+        /** Podíl změny rychlosti, o který se vyhlazená rychlost posune s každou polohou z GPS. */
+        private const val ZOOM_SPEED_SMOOTHING = 0.25
+
+        internal fun speedZoom(kmh: Double): Double {
+            val pts = SPEED_ZOOM
+            if (kmh <= pts.first().first) return pts.first().second
+            if (kmh >= pts.last().first) return pts.last().second
+            val i = pts.indexOfFirst { it.first > kmh }
+            val (v0, z0) = pts[i - 1]
+            val (v1, z1) = pts[i]
+            return z0 + (z1 - z0) * (kmh - v0) / (v1 - v0)
+        }
         private const val ROUTE_COLOR = 0xDD1565C0.toInt()
         private const val ROUTE_COLOR_NIGHT = 0xEE42A5F5.toInt()
+        /** Za navigace: zbývající trasa výrazně světle modrá, projetá tmavě modrá. */
+        private const val ROUTE_AHEAD = 0xFF00B0FF.toInt()
+        private const val ROUTE_PASSED = 0xDD0D47A1.toInt()
         /** Šipky hned za startem, ať je směr vidět i na přiblížené mapě (m od startu). */
         private val ARROWS_NEAR_START = listOf(120.0, 350.0, 700.0)
         /** Dál po okruhu zhruba tolik šipek, ale ne hustěji než po kilometru. */

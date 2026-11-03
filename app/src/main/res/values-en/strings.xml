@@ -145,6 +145,15 @@
     <string name="language_system">System default</string>
     <string name="language_czech">Čeština</string>
     <string name="language_english">English</string>
+    <string name="settings_voice">Navigation voice</string>
+    <string name="voice_loading">Looking for voices on the phone…</string>
+    <string name="voice_default">Phone\'s default voice</string>
+    <string name="voice_off">No voice – instructions on screen only</string>
+    <string name="voice_number">Voice %1$d</string>
+    <string name="voice_high_quality">high quality</string>
+    <string name="voice_missing">The voice for the navigation language is missing – tap to download it</string>
+    <string name="voice_no_engine">The phone has no text-to-speech engine</string>
+    <string name="voice_sample">In 200 metres, turn right</string>
     <string name="settings_night_map">Night map</string>
     <string name="night_map_auto">Automatic, after sunset</string>
     <string name="night_map_theme">Same as app appearance</string>

@@ -23,6 +23,7 @@
 
         <TextView style="@style/SettingsHeader" android:text="@string/settings_language" />
         <include android:id="@+id/language" layout="@layout/item_setting" />
+        <include android:id="@+id/voice" layout="@layout/item_setting" />
 
         <TextView style="@style/SettingsHeader" android:text="@string/settings_data" />
         <include android:id="@+id/mobileData" layout="@layout/item_setting" />
