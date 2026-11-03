@@ -1333,6 +1333,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 
+    /** Úsek trasy, na kterém leží bod ve vzdálenosti [meters] od startu. */
+    private fun segmentAt(r: Route, meters: Double): Int =
+        (r.distances.indexOfFirst { it > meters } - 1).coerceIn(0, r.points.size - 2)
+
     private fun onNavigationFix(nav: Navigator, location: Location, pos: LatLong) {
         val state = nav.update(pos, location.accuracy, location.speed)
         onRideFix(location, pos)
@@ -1341,9 +1345,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
         // Na trase podle směru silnice, mimo ni podle kurzu z GPS (jen v pohybu, jinak je nespolehlivý).
         val heading = if (!state.offRoute) state.routeBearing
             else location.bearing.takeIf { location.hasBearing() && location.speed > 1.5f }
-        mapCtl.follow(state.snapped.takeUnless { state.offRoute } ?: pos, heading, location.speed)
-        // Trasa před jezdcem světle, za ním tmavě – mimo trasu dělení nedává smysl
-        if (!state.offRoute) mapCtl.showProgress(nav.route.points, state.segment, state.snapped)
+        // Ikona k další poloze z GPS plynule dojíždí, takže by o sekundu zaostávala – míří proto
+        // na místo, kam jezdec po trase za tu dobu dojede (poloha z GPS je navíc o chvilku stará)
+        val r = nav.route
+        val along = r.distances[state.segment] + r.points[state.segment].sphericalDistance(state.snapped)
+        val ahead = (location.speed * PREDICT_SECONDS).toDouble().coerceIn(0.0, PREDICT_MAX_METERS)
+        val shown = r.pointAt(along + ahead)
+        mapCtl.follow(shown.takeUnless { state.offRoute } ?: pos, heading, location.speed)
+        // Trasa před jezdcem tmavě a široce, za ním světle a úzce – mimo trasu dělení nedává smysl
+        if (!state.offRoute) mapCtl.showProgress(r.points, segmentAt(r, along + ahead), shown)
 
         showLanes(state.next?.takeIf { state.toNext < LANES_DISTANCE && !state.offRoute })
         showManeuverArrow(state.next)
@@ -1520,6 +1530,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
         const val CAMERA_PASSED = 15.0
         /** O kolik km/h nad povolenou rychlost je štítek červený a zazní „zpomalte“. */
         const val CAMERA_TOLERANCE_KMH = 3
+        /** O kolik sekund jízdy po trase ikona míří dopředu (vyrovná dojíždění a stáří polohy z GPS). */
+        const val PREDICT_SECONDS = 1.0f
+        /** Víc dopředu nikdy – při skoku rychlosti z GPS by ikona utekla. */
+        const val PREDICT_MAX_METERS = 40.0
         /** Jak dlouho zůstane úvodní logo (ms). */
         const val START_LOGO_MS = 5_000L
         /** Kdyby nepřišel konec systémové úvodní obrazovky, odpočet začne tolik po prvním vykreslení. */

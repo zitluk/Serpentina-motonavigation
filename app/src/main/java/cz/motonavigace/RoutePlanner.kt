@@ -53,6 +53,18 @@ class Route(
     val lengthMeters: Int,
 ) {
     val durationSeconds get() = times.last().toInt()
+
+    /** Bod trasy ve vzdálenosti [meters] od startu (mimo trasu se drží jejích konců). */
+    fun pointAt(meters: Double): LatLong {
+        if (points.size < 2 || meters <= 0) return points.first()
+        if (meters >= distances.last()) return points.last()
+        var i = distances.indexOfFirst { it > meters }.coerceAtLeast(1)
+        val seg = distances[i] - distances[i - 1]
+        val t = if (seg > 0) (meters - distances[i - 1]) / seg else 0.0
+        val a = points[i - 1]
+        val b = points[i]
+        return LatLong(a.latitude + (b.latitude - a.latitude) * t, a.longitude + (b.longitude - a.longitude) * t)
+    }
 }
 
 /** Chyba výpočtu trasy; text se skládá až v UI podle jazyka aplikace. */

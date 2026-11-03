@@ -177,6 +177,27 @@ object MarkerIcons {
     /** Index snímku pro natočení motorky vůči obrazovce ve stupních (po směru hodin). */
     fun frame3d(relativeDeg: Float): Int = Math.floorMod(Math.round(relativeDeg / (360f / FRAMES_3D)), FRAMES_3D)
 
+    /** Přední kolo leží v modelech tools/bike3d.py zhruba 0,8 m před středem motorky. */
+    private const val FRONT_WHEEL_M = 0.8
+    /** Měřítko a sklon kamery modelů (tools/bike3d.py: PX_PER_M / OUT, ELEV). */
+    private const val MODEL_M_PER_FRAME = 62.0 / 192.0
+    private val MODEL_ELEV = Math.toRadians(35.0)
+
+    /**
+     * Kotva 3D motorky (podíl šířky a výšky snímku) v místě, kde přední kolo stojí na zemi.
+     * Ikona je mnohem větší než skutečná motorka v měřítku mapy; s kotvou uprostřed by příď
+     * na nakloněné mapě vyčnívala desítky metrů před skutečnou polohu.
+     */
+    fun anchor3d(frame: Int): Pair<Float, Float> {
+        val a = Math.toRadians(frame * 360.0 / FRAMES_3D)
+        val x = 0.5 + FRONT_WHEEL_M * Math.sin(a) * MODEL_M_PER_FRAME
+        val y = ANCHOR_3D_Y - FRONT_WHEEL_M * Math.cos(a) * Math.sin(MODEL_ELEV) * MODEL_M_PER_FRAME
+        return x.toFloat() to y.toFloat()
+    }
+
+    /** Svislá poloha přídě ploché ikony (kreslené severem nahoru) – tam je poloha jezdce. */
+    const val FLAT_NOSE_Y = 0.18f
+
     /** Stojící motorka z pohledu kamery 3D mapy, obarvená zvolenou barvou. */
     fun bike3d(context: Context, shape: MarkerShape, color: Int, frame: Int, sizeDp: Float): Bitmap {
         val (bodyRes, fixedRes) = SHEETS_3D.getValue(shape)

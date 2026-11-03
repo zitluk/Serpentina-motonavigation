@@ -73,7 +73,7 @@ class MapController(
     // Trasa tmavě modrá – červená splývala s červenými a oranžovými silnicemi, řeky jsou světle modré
     private val routeLayer = PathLayer(map, line(ROUTE_COLOR, 7f))
     /** Projetá část trasy za navigace (pod zbývající částí). */
-    private val passedLayer = PathLayer(map, line(ROUTE_PASSED, 7f))
+    private val passedLayer = PathLayer(map, line(ROUTE_PASSED, ROUTE_PASSED_WIDTH))
     /** Šipky směru jízdy na okruhu (start = cíl, jinak by nebylo poznat, kudy vyjet). */
     private var arrowBitmap = makeArrowBitmap()
     private var shownDirection: List<LatLong>? = null
@@ -189,7 +189,7 @@ class MapController(
 
     // ---------------------------------------------------------------- průběh navigace
 
-    /** Za navigace: trasa před jezdcem výrazně světle modrá, projetá část za ním tmavě modrá. */
+    /** Za navigace: trasa před jezdcem tmavě modrá a široká, projetá část za ním světle modrá a užší. */
     private var routeProgress = false
 
     fun setRouteProgress(on: Boolean) {
@@ -200,7 +200,7 @@ class MapController(
     }
 
     private fun applyRouteStyle() {
-        routeLayer.setStyle(if (routeProgress) line(ROUTE_AHEAD, 8f) else line(routeColor(), 7f))
+        routeLayer.setStyle(if (routeProgress) line(ROUTE_AHEAD, ROUTE_AHEAD_WIDTH) else line(routeColor(), 7f))
     }
 
     /** Rozdělí trasu v místě jezdce ([at] na úseku [segment]) na projetou a zbývající část. */
@@ -499,17 +499,20 @@ class MapController(
                     MarkerSymbol.HotspotPlace.BOTTOM_CENTER, true,
                 )
             } else if (frame3d >= 0) {
+                // Poloha jezdce je pod předním kolem, ne uprostřed (zvětšené) motorky
+                val (ax, ay) = MarkerIcons.anchor3d(frame3d)
                 MarkerSymbol(
                     AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
                         MarkerIcons.bike3d(context, shape, Settings.markerColor, frame3d, 72f))),
-                    0.5f, MarkerIcons.ANCHOR_3D_Y, true,
+                    ax, ay, true,
                 )
             } else {
-                // Ne-billboard: ikona leží na mapě, otáčí se a ve 3D se naklání s ní
+                // Ne-billboard: ikona leží na mapě, otáčí se a ve 3D se naklání s ní;
+                // poloha je u přídě, ikona se otáčí kolem ní
                 MarkerSymbol(
                     AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
                         MarkerIcons.bitmap(context, Settings.markerShape, Settings.markerColor, 40f))),
-                    MarkerSymbol.HotspotPlace.CENTER, false,
+                    0.5f, MarkerIcons.FLAT_NOSE_Y, false,
                 )
             }
             location.removeAllItems()
@@ -636,9 +639,11 @@ class MapController(
         }
         private const val ROUTE_COLOR = 0xDD1565C0.toInt()
         private const val ROUTE_COLOR_NIGHT = 0xEE42A5F5.toInt()
-        /** Za navigace: zbývající trasa výrazně světle modrá, projetá tmavě modrá. */
-        private const val ROUTE_AHEAD = 0xFF00B0FF.toInt()
-        private const val ROUTE_PASSED = 0xDD0D47A1.toInt()
+        /** Za navigace: zbývající trasa tmavě modrá a širší, projetá světle modrá a užší. */
+        private const val ROUTE_AHEAD = 0xEE0D47A1.toInt()
+        private const val ROUTE_PASSED = 0xDD4FC3F7.toInt()
+        private const val ROUTE_AHEAD_WIDTH = 10f
+        private const val ROUTE_PASSED_WIDTH = 5f
         /** Šipky hned za startem, ať je směr vidět i na přiblížené mapě (m od startu). */
         private val ARROWS_NEAR_START = listOf(120.0, 350.0, 700.0)
         /** Dál po okruhu zhruba tolik šipek, ale ne hustěji než po kilometru. */
