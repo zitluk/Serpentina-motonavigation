@@ -34,7 +34,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - Panel trasy dole: délka, čas, varianty, typ trasy, vyhýbání, **Navigovat**
 - Tlačítko **3D / 2D / N** vpravo nahoře přepíná zobrazení mapy, tlačítko polohy vycentruje mapu na tvoji polohu. Dokud GPS nezná přesnou polohu, ukazuje se „Prosím počkejte na přesnou polohu“
 - Menu ☰ → **Projížďka po okolí** → zvol délku → Vytvořit; Obrátit pojede okruh opačně
-- Menu ☰ → **Spustit záznam jízdy** (červený štítek REC na mapě, ťuknutím záznam zastavíš)
+- Menu ☰ → **Záznam jízdy** → **Spustit záznam manuálně** (červený štítek REC na mapě, ťuknutím záznam zastavíš) a zaškrtávací volby **Spustit záznam sám po rozjezdu (od 10 km/h)** a **Zastavit záznam po ukončení navigace**
 - Menu ☰ → **Trasy a jízdy** – seznam jízd podle data a času; ťuknutím detail jízdy s náklonem, vzdáleností, časy, rychlostmi, zrychlením a stoupáním (s obrysem trasy) → Sdílet jako obrázek / Zobrazit na mapě / Navigovat po trase / Sdílet GPX / Smazat
 - Navigace po GPX naplánuje trasu po silnicích přes body vybrané ze stopy, takže má pokyny i přepočet
 - Během navigace: další manévr nahoře, rychlost, příjezd a zbývající km dole, **Ukončit** (nebo tlačítko Zpět)

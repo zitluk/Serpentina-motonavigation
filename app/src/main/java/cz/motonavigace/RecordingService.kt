@@ -60,6 +60,11 @@ object Recording {
         _state.value = State()
     }
 
+    /** Od této rychlosti se záznam spustí sám (volba v menu). */
+    const val AUTO_START_KMH = 10f
+    /** Po zastavení záznamu se automatika znovu chystá, až motorka zpomalí pod tuto rychlost. */
+    const val AUTO_REARM_KMH = 3f
+
     fun start(context: Context) {
         ContextCompat.startForegroundService(context, Intent(context, RecordingService::class.java))
     }

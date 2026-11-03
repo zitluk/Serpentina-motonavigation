@@ -138,6 +138,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
         ActivityResultContracts.RequestPermission()
     ) { startRecording() } // bez notifikací záznam funguje taky, jen ho není vidět v liště
 
+    /** Jen oprávnění pro notifikaci záznamu, bez spuštění (automatický záznam se spustí až za jízdy). */
+    private val notificationPermissionOnly = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
     private val stopNavigationOnBack = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() = stopNavigation()
     }
@@ -496,11 +499,28 @@ class MainActivity : AppCompatActivity(), LocationListener {
         searchLauncher.launch(intent)
     }
 
+    /**
+     * Záznam jízdy: ruční spuštění (za běhu zastavení) a pod ním zaškrtávací volby
+     * automatického spuštění po rozjezdu a zastavení po navigaci.
+     */
+    private fun showRecordingMenu() {
+        val manual = if (Recording.state.value.active) GloveMenu.Item(getString(R.string.recording_stop)) { confirmStopRecording() }
+            else GloveMenu.Item(getString(R.string.recording_start_manual)) { requestRecording() }
+        GloveMenu.show(this, getString(R.string.recording_title), listOf(
+            manual,
+            GloveMenu.Item.checkbox(getString(R.string.recording_auto_start), Settings.autoStartRecording) {
+                Settings.autoStartRecording = it
+                if (it) requestRecordingPermissions()
+            },
+            GloveMenu.Item.checkbox(getString(R.string.recording_stop_after_nav), Settings.stopRecordingAfterNavigation) {
+                Settings.stopRecordingAfterNavigation = it
+            },
+        ))
+    }
+
     private fun showMenu() {
         fun item(text: Int, action: () -> Unit) = GloveMenu.Item(getString(text), action = action)
-        val recording =
-            if (Recording.state.value.active) item(R.string.recording_stop) { confirmStopRecording() }
-            else item(R.string.recording_start) { requestRecording() }
+        val recording = item(R.string.recording_title) { showRecordingMenu() }
         if (navigator != null || recalculating) {
             // Za navigace jen to, co jízdu nepřeruší; nový cíl se rovnou naviguje
             GloveMenu.show(this, null, listOf(
@@ -643,6 +663,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         lastLocation = location
         val pos = LatLong(location.latitude, location.longitude)
         val heading = headingFor(location, pos)
+        autoRecording(location)
         // Za navigace ikonu posouvá sledování trasy – na stejné místo jako kameru
         navigator?.let { onNavigationFix(it, location, pos); return }
         mapCtl.setLocation(pos, heading)
@@ -1139,6 +1160,41 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun startRecording() = Recording.start(this)
 
+    /**
+     * Při zapnutí automatického záznamu si oprávnění vyžádáme hned – za jízdy, kdy se záznam
+     * spustí sám, by systémový dotaz překážel. Bez notifikací záznam funguje taky.
+     */
+    private fun requestRecordingPermissions() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestLocation()
+        } else if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionOnly.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    /** Automatika se po zastavení záznamu znovu chystá až po zastavení motorky (ne hned po ručním stopu). */
+    private var autoStartArmed = true
+
+    /** Automatický start záznamu po rozjezdu a znovu-nachystání po zastavení motorky. */
+    private fun autoRecording(location: Location) {
+        if (!Settings.autoStartRecording || !location.hasSpeed()) return
+        val kmh = location.speed * 3.6f
+        if (Recording.state.value.active) {
+            autoStartArmed = false
+            return
+        }
+        if (kmh < Recording.AUTO_REARM_KMH) autoStartArmed = true
+        if (autoStartArmed && kmh >= Recording.AUTO_START_KMH &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ) {
+            autoStartArmed = false
+            startRecording()
+            Toast.makeText(this, R.string.recording_auto_started, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun confirmStopRecording() {
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.recording_stop)
@@ -1231,6 +1287,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         clearRoute()
         setNavigationUi(false)
         mapCtl.stopFollowing(lastLocation?.let { LatLong(it.latitude, it.longitude) })
+        // Záznam jízdy skončí s navigací, pokud si to jezdec zaškrtl (uloží se do Tras a jízd)
+        if (Settings.stopRecordingAfterNavigation && Recording.state.value.active) Recording.stop(this)
         finishRide()?.let(::offerRideSummary)
     }
 

@@ -11,6 +11,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.color.MaterialColors
 
 /**
@@ -19,7 +20,16 @@ import com.google.android.material.color.MaterialColors
  */
 object GloveMenu {
 
-    class Item(val title: String, val checked: Boolean = false, val icon: Drawable? = null, val action: () -> Unit)
+    class Item(val title: String, val checked: Boolean = false, val icon: Drawable? = null, val action: () -> Unit) {
+        /** Zaškrtávací volba: ťuknutí ji přepne a nabídka zůstane otevřená. */
+        var onToggle: ((Boolean) -> Unit)? = null
+            private set
+
+        companion object {
+            fun checkbox(title: String, checked: Boolean, onToggle: (Boolean) -> Unit) =
+                Item(title, checked) {}.also { it.onToggle = onToggle }
+        }
+    }
 
     fun show(context: Context, title: String?, items: List<Item>) {
         val dialog = BottomSheetDialog(context)
@@ -42,6 +52,20 @@ object GloveMenu {
             })
         }
         items.forEachIndexed { i, item ->
+            val toggle = item.onToggle
+            if (toggle != null) {
+                // Velké zaškrtávací políčko odsazené pod položkou, ke které patří
+                list.addView(MaterialCheckBox(context).apply {
+                    text = item.title
+                    isChecked = item.checked
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+                    minHeight = dp(64)
+                    setPadding(dp(12), 0, dp(24), 0)
+                    setOnCheckedChangeListener { _, on -> toggle(on) }
+                }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                    .apply { marginStart = dp(40) })
+                return@forEachIndexed
+            }
             if (i > 0 || title != null) list.addView(View(context).apply { setBackgroundColor(divider) },
                 LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)))
             list.addView(TextView(context).apply {

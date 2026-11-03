@@ -70,6 +70,16 @@ object Settings {
             AppCompatDelegate.setDefaultNightMode(value.nightMode)
         }
 
+    /** Záznam jízdy se spustí sám, jakmile motorka jede aspoň [Recording.AUTO_START_KMH]. */
+    var autoStartRecording: Boolean
+        get() = prefs.getBoolean("auto_start_recording", false)
+        set(value) = prefs.edit { putBoolean("auto_start_recording", value) }
+
+    /** Po ukončení navigace se záznam jízdy zastaví a uloží. */
+    var stopRecordingAfterNavigation: Boolean
+        get() = prefs.getBoolean("stop_recording_after_nav", false)
+        set(value) = prefs.edit { putBoolean("stop_recording_after_nav", value) }
+
     /** Hlas navigace (Voice.name), prázdný = výchozí hlas, [NavVoice.OFF] = bez hlasu. */
     var voice: String
         get() = prefs.getString("voice", "").orEmpty()

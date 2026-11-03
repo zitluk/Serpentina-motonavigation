@@ -68,6 +68,11 @@
     <string name="radar_speak_limit">%1$s ahead, %2$d</string>
     <string name="radar_slow_down">Slow down</string>
     <string name="recording_start">Start ride recording</string>
+    <string name="recording_title">Ride recording</string>
+    <string name="recording_start_manual">Start recording manually</string>
+    <string name="recording_auto_start">Start recording automatically when riding (from 10 km/h)</string>
+    <string name="recording_stop_after_nav">Stop recording when navigation ends</string>
+    <string name="recording_auto_started">Ride recording started</string>
     <string name="recording_stop">Stop recording</string>
     <string name="recording_saved">Ride saved: %1$s</string>
     <string name="round_trip">Ride around</string>
