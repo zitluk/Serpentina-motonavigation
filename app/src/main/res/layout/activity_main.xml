@@ -65,64 +65,91 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/navBanner"
+        <!-- Při navigaci: menu vlevo nahoře jako u vyhledávání, vedle panel s dalším manévrem -->
+        <LinearLayout
+            android:id="@+id/navTop"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            app:cardBackgroundColor="#263238"
-            app:cardElevation="6dp">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNavMenu"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="@string/menu"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                app:cornerRadius="20dp"
+                app:elevation="4dp"
+                app:icon="@drawable/ic_menu"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="40dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/navBanner"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp">
-
-                <TextView
-                    android:id="@+id/navArrow"
-                    android:layout_width="64dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:textColor="#FFFFFF"
-                    android:textSize="48sp" />
+                android:layout_weight="1"
+                app:cardBackgroundColor="#263238"
+                app:cardElevation="6dp">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
 
                     <TextView
-                        android:id="@+id/navDistance"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/navArrow"
+                        android:layout_width="64dp"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
                         android:textColor="#FFFFFF"
-                        android:textSize="32sp"
-                        android:textStyle="bold" />
+                        android:textSize="48sp" />
 
-                    <TextView
-                        android:id="@+id/navInstruction"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="#CFD8DC"
-                        android:textSize="18sp" />
-
-                    <!-- Doporučené pruhy před manévrem (plní MainActivity) -->
                     <LinearLayout
-                        android:id="@+id/navLanes"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/lanes_bg"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="4dp"
-                        android:visibility="gone" />
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/navDistance"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#FFFFFF"
+                            android:textSize="32sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/navInstruction"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#CFD8DC"
+                            android:textSize="18sp" />
+
+                        <!-- Doporučené pruhy před manévrem (plní MainActivity) -->
+                        <LinearLayout
+                            android:id="@+id/navLanes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/lanes_bg"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="4dp"
+                            android:visibility="gone" />
+                    </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -149,6 +176,32 @@
                     app:chipIcon="@drawable/ic_record"
                     app:chipIconSize="12dp"
                     app:chipIconTint="#FFFFFF" />
+
+                <!-- Nejbližší radar před jezdcem; červený při překročení povolené rychlosti -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/radarCard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="#263238"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp">
+
+                    <TextView
+                        android:id="@+id/radarText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:drawablePadding="10dp"
+                        android:gravity="center_vertical"
+                        android:minHeight="56dp"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="6dp"
+                        android:textColor="#FFFFFF"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        app:drawableStartCompat="@drawable/ic_speed_camera" />
+                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Mapa se vycentruje až na přesnou polohu; do té doby čekáme.
                      Karta místo čipu, ať se delší text zalomí místo useknutí. -->
@@ -301,6 +354,20 @@
                     app:fabCustomSize="64dp"
                     app:maxImageSize="34dp"
                     app:srcCompat="@drawable/ic_zoom_out" />
+
+                <!-- Záznam jízdy za jízdy – menu je během navigace schované -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/btnNavRecord"
+                    style="?attr/floatingActionButtonSecondaryStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:contentDescription="@string/recording_start"
+                    android:visibility="gone"
+                    app:fabCustomSize="64dp"
+                    app:maxImageSize="30dp"
+                    app:srcCompat="@drawable/ic_record"
+                    app:tint="#C62828" />
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>
@@ -576,4 +643,22 @@
                 android:textSize="20sp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- Úvodní logo zvoleného výrobce přes celou šířku displeje (plní a po 5 s skryje MainActivity);
+         zachytává dotyky, ať se pod ním nedá omylem ovládat mapa -->
+    <FrameLayout
+        android:id="@+id/startLogo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/startLogoImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter" />
+    </FrameLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

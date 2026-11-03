@@ -17,6 +17,14 @@ enum class AppTheme(val id: Int, @StringRes val label: Int, val nightMode: Int) 
     DARK(2, R.string.theme_dark, AppCompatDelegate.MODE_NIGHT_YES),
 }
 
+/** Kdy kreslit mapu v nočních barvách. */
+enum class NightMap(val id: Int, @StringRes val label: Int) {
+    AUTO(0, R.string.night_map_auto),
+    APP_THEME(1, R.string.night_map_theme),
+    ALWAYS(2, R.string.night_map_always),
+    NEVER(3, R.string.night_map_never),
+}
+
 enum class AppLanguage(val id: Int, @StringRes val label: Int, val tag: String) {
     SYSTEM(0, R.string.language_system, ""),
     CZECH(1, R.string.language_czech, "cs"),
@@ -61,6 +69,10 @@ object Settings {
             prefs.edit { putInt("theme", value.id) }
             AppCompatDelegate.setDefaultNightMode(value.nightMode)
         }
+
+    var nightMap: NightMap
+        get() = NightMap.entries.firstOrNull { it.id == prefs.getInt("night_map", NightMap.AUTO.id) } ?: NightMap.AUTO
+        set(value) = prefs.edit { putInt("night_map", value.id) }
 
     var bike: BikeType
         get() = BikeType.entries.firstOrNull { it.id == prefs.getInt("bike", BikeType.TOURING.id) } ?: BikeType.TOURING

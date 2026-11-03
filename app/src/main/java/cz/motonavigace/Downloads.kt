@@ -54,7 +54,7 @@ object Downloads {
             if (target in busy) continue
             val part = File(target.path + ".part").apply { delete() }
             val request = DownloadManager.Request(Uri.parse(url))
-                .setTitle("${region.name}: ${target.name}")
+                .setTitle("${region.label()}: ${target.name}")
                 .setDestinationUri(Uri.fromFile(part))
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
                 // Při vypnutých mobilních datech počká DownloadManager na Wi-Fi

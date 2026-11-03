@@ -12,8 +12,8 @@ android {
         applicationId = "cz.motonavigace"
         minSdk = 26
         targetSdk = 37
-        versionCode = 5
-        versionName = "0.3.2"
+        versionCode = 6
+        versionName = "0.4.0"
     }
 
     // Klíč pro vydání je jen na počítači vývojáře (~/.gradle/gradle.properties), v repozitáři není;
@@ -78,6 +78,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
 
     testImplementation("junit:junit:4.13.2")
+    // org.json je v Androidu vestavěný, v testech na JVM jsou jen prázdné stuby
+    testImplementation("org.json:json:20240303")
 }
 
 kotlin {

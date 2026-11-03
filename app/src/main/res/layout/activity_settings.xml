@@ -11,6 +11,7 @@
 
         <TextView style="@style/SettingsHeader" android:text="@string/settings_appearance" />
         <include android:id="@+id/theme" layout="@layout/item_setting" />
+        <include android:id="@+id/nightMap" layout="@layout/item_setting" />
 
         <TextView style="@style/SettingsHeader" android:text="@string/settings_bike" />
         <include android:id="@+id/manufacturer" layout="@layout/item_setting" />
@@ -30,9 +31,23 @@
         <include android:id="@+id/about" layout="@layout/item_setting" />
         <include android:id="@+id/update" layout="@layout/item_setting" />
         <include android:id="@+id/feedback" layout="@layout/item_setting" />
+        <include android:id="@+id/share" layout="@layout/item_setting" />
+
+        <!-- Stálý odkaz na nejnovější verzi (Serpentina-latest.apk) – kamarád si ho naskenuje z displeje -->
+        <ImageView
+            android:id="@+id/shareQr"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="@string/share_qr_description"
+            android:scaleType="fitCenter"
+            android:src="@drawable/share_qr" />
+
         <include android:id="@+id/donate" layout="@layout/item_setting" />
 
-        <!-- QR Platba na účet vývojáře; bílý podklad je součástí obrázku, takže jde naskenovat i v tmavém režimu -->
+        <!-- QR Platba na účet vývojáře, rozbalí se ťuknutím na položku; bílý podklad je součástí
+             obrázku, takže jde naskenovat i v tmavém režimu -->
         <ImageView
             android:id="@+id/donateQr"
             android:layout_width="220dp"
@@ -41,6 +56,7 @@
             android:layout_marginBottom="16dp"
             android:contentDescription="@string/donate_qr_description"
             android:scaleType="fitCenter"
-            android:src="@drawable/donate_qr" />
+            android:src="@drawable/donate_qr"
+            android:visibility="gone" />
     </LinearLayout>
 </ScrollView>

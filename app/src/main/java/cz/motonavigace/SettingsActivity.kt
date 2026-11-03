@@ -2,6 +2,7 @@ package cz.motonavigace
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
@@ -33,6 +34,13 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         b.theme.title.setText(R.string.settings_theme)
+        b.nightMap.title.setText(R.string.settings_night_map)
+        b.nightMap.root.setOnClickListener {
+            choose(R.string.settings_night_map, NightMap.entries.map { getString(it.label) }, Settings.nightMap.ordinal) {
+                Settings.nightMap = NightMap.entries[it]
+                refresh()
+            }
+        }
         b.manufacturer.title.setText(R.string.settings_manufacturer)
         b.bike.title.setText(R.string.settings_bike_type)
         b.language.title.setText(R.string.settings_language_app)
@@ -71,10 +79,15 @@ class SettingsActivity : AppCompatActivity() {
         b.feedback.title.setText(R.string.feedback_title)
         b.feedback.summary.setText(R.string.feedback_summary)
         b.feedback.root.setOnClickListener { showFeedback() }
+        b.share.title.setText(R.string.share_title)
+        b.share.summary.setText(R.string.share_summary)
+        b.share.root.setOnClickListener { shareApp() }
+        b.shareQr.setOnClickListener { shareApp() }
         b.donate.title.setText(R.string.settings_donate)
-        b.donate.summary.text = getString(R.string.donate_summary, getString(R.string.donate_account))
+        // Platební údaje a QR kód až po ťuknutí, ať nastavení nezahlcují
+        showDonate(expanded = false)
+        b.donate.root.setOnClickListener { showDonate(expanded = b.donateQr.visibility != View.VISIBLE) }
         // QR kód na vlastním displeji telefon nenaskenuje, proto jde účet i zkopírovat
-        b.donate.root.setOnClickListener { copyDonateAccount() }
         b.donateQr.setOnClickListener { copyDonateAccount() }
 
         b.theme.root.setOnClickListener {
@@ -133,6 +146,7 @@ class SettingsActivity : AppCompatActivity() {
         }
         b.manufacturer.summary.text = Settings.manufacturer.ifEmpty { getString(R.string.manufacturer_none) }
         b.theme.summary.setText(Settings.theme.label)
+        b.nightMap.summary.setText(Settings.nightMap.label)
         val bike = Settings.bike
         b.bike.summary.text = getString(bike.label) + "\n" + getString(bike.description)
         b.language.summary.setText(Settings.language.label)
@@ -217,6 +231,23 @@ class SettingsActivity : AppCompatActivity() {
         }
         dialog.show()
         v.message.requestFocus()
+    }
+
+    /** Odkaz ke stažení přes systémové sdílení (zprávy, WhatsApp, e-mail…). */
+    private fun shareApp() {
+        val send = Intent(Intent.ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_full_name))
+            .putExtra(Intent.EXTRA_TEXT, getString(R.string.share_text, UpdateCheck.DOWNLOAD_URL))
+        startActivity(Intent.createChooser(send, getString(R.string.share_title)))
+    }
+
+    private fun showDonate(expanded: Boolean) {
+        b.donate.summary.text = if (expanded) getString(R.string.donate_summary, getString(R.string.donate_account))
+            else getString(R.string.donate_collapsed)
+        b.donateQr.visibility = if (expanded) View.VISIBLE else View.GONE
+        // Rozbalený QR kód je na konci nastavení – posuneme ho do obrazu
+        if (expanded) b.root.post { b.root.smoothScrollTo(0, b.donateQr.bottom) }
     }
 
     private fun copyDonateAccount() {

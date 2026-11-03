@@ -220,6 +220,25 @@ object MarkerIcons {
     fun bitmap(context: Context, shape: MarkerShape, color: Int, sizeDp: Float = 48f): Bitmap =
         draw(context, shape.layers, color, sizeDp)
 
+    /** Šipka směru jízdy na trase: bílá šipka nahoru v kruhu barvy trasy, s bílým okrajem. */
+    fun directionArrow(context: Context, color: Int, sizeDp: Float = 26f): Bitmap {
+        val px = (sizeDp * context.resources.displayMetrics.density).toInt()
+        val bmp = createBitmap(px, px)
+        val c = Canvas(bmp)
+        c.scale(px / 24f, px / 24f)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.color = Color.WHITE
+        c.drawCircle(12f, 12f, 12f, paint)
+        paint.color = color
+        c.drawCircle(12f, 12f, 10.2f, paint)
+        paint.color = Color.WHITE
+        c.drawPath(Path().apply {
+            moveTo(12f, 4.5f); lineTo(18.5f, 13f); lineTo(14.2f, 13f); lineTo(14.2f, 19f)
+            lineTo(9.8f, 19f); lineTo(9.8f, 13f); lineTo(5.5f, 13f); close()
+        }, paint)
+        return bmp
+    }
+
     /** Chodec ve zvolené barvě; kreslený z boku, na mapě stojí a neotáčí se. */
     fun pedestrian(context: Context, color: Int, sizeDp: Float = 48f): Bitmap =
         draw(context, PEDESTRIAN, color, sizeDp)

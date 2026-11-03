@@ -4,7 +4,10 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -14,6 +17,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.view.Gravity
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -29,6 +33,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
@@ -37,12 +42,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlin.math.roundToInt
 import cz.motonavigace.databinding.ActivityMainBinding
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.mapsforge.core.model.LatLong
 import java.io.File
 import java.text.DateFormat
@@ -141,6 +150,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         enableEdgeToEdge()
         b = ActivityMainBinding.inflate(layoutInflater)
         setContentView(b.root)
+        // Úvodní logo jen při spuštění, ne po otočení obrazovky
+        if (savedInstanceState == null) showStartLogo()
         adaptToScreen(resources.configuration)
         onBackPressedDispatcher.addCallback(this, stopNavigationOnBack)
 
@@ -172,8 +183,13 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         b.btnNavigate.setOnClickListener { startNavigation() }
         b.btnStopNav.setOnClickListener { stopNavigation() }
+        b.btnNavMenu.setOnClickListener { showMenu() }
+        fabBackground = b.btnNavRecord.backgroundTintList
+        b.btnNavRecord.setOnClickListener {
+            if (Recording.state.value.active) confirmStopRecording() else requestRecording()
+        }
         // Výška horního pruhu s pokynem i spodního panelu se mění (pruhy, zalomený text) – jezdec drží střed volné mapy
-        listOf(b.navBanner, b.navPanel).forEach { panel ->
+        listOf(b.navTop, b.navPanel).forEach { panel ->
             panel.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
                 if (b.navPanel.visibility == View.VISIBLE) updateNavPivot()
             }
@@ -195,6 +211,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 Recording.state.collect(::onRecordingState)
+            }
+        }
+        // Noční mapa: kontrola po minutě stačí, západ slunce se nepřehoupne náhle
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    applyNightMap()
+                    delay(60_000)
+                }
             }
         }
         RecordingService.recoverUnfinished()?.let { TrackLibrary.lastRecorded = it }
@@ -264,14 +289,98 @@ class MainActivity : AppCompatActivity(), LocationListener {
         lifecycleScope.launch { SearchIndex.ensureAll() }
     }
 
-    /** Jezdec při navigaci doprostřed viditelné mapy mezi horním pruhem s pokynem a spodním panelem. */
+    /**
+     * Úvodní logo zvoleného výrobce (nebo Serpentiny) přes celou šířku displeje na [START_LOGO_MS].
+     * Systémová úvodní obrazovka umí jen malou ikonu uprostřed, tohle ji vystřídá; mapa se mezitím
+     * načítá pod ním. Logo a barvu pozadí bere ze stylu úvodní obrazovky výrobce.
+     */
+    private fun showStartLogo() {
+        val attrs = intArrayOf(
+            androidx.core.splashscreen.R.attr.windowSplashScreenAnimatedIcon,
+            androidx.core.splashscreen.R.attr.windowSplashScreenIconBackgroundColor,
+        )
+        val a = obtainStyledAttributes(Settings.splashTheme, attrs)
+        val logo = a.getDrawable(0) ?: ContextCompat.getDrawable(this, R.drawable.ic_launcher_foreground)
+        val background = a.getColor(1, ContextCompat.getColor(this, R.color.launcher_bg))
+        a.recycle()
+        b.startLogo.setBackgroundColor(background)
+        // Ikona má kolem loga průhledný okraj pro kulaté a čtvercové ikony – ořízneme ho,
+        // ať logo vyplní šířku displeje
+        logo?.let { b.startLogoImage.setImageBitmap(trimTransparent(it.toBitmap(START_LOGO_PX, START_LOGO_PX))) }
+        val margin = (START_LOGO_MARGIN_DP * resources.displayMetrics.density).toInt()
+        b.startLogoImage.setPadding(margin, margin, margin, margin)
+        b.startLogo.visibility = View.VISIBLE
+        // Pojistka, kdyby okno fokus hned nedostalo (třeba pod systémovým dialogem)
+        b.startLogo.doOnPreDraw { b.startLogo.postDelayed(::startLogoCountdown, START_LOGO_FALLBACK_MS) }
+    }
+
+    /**
+     * Systémovou úvodní obrazovku na Androidu 12+ kreslí spouštěcí aktivita výrobce a zmizí, až se
+     * okno MainActivity ukáže – to pozná fokus okna. Teprve od té chvíle je logo vidět.
+     */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && b.startLogo.visibility == View.VISIBLE) startLogoCountdown()
+    }
+
+    private var logoCountdown = false
+
+    /** Odpočet od chvíle, kdy je logo opravdu vidět; pak logo plynule zmizí. */
+    private fun startLogoCountdown() {
+        if (logoCountdown) return
+        logoCountdown = true
+        lifecycleScope.launch {
+            delay(START_LOGO_MS)
+            b.startLogo.animate().alpha(0f).setDuration(400).withEndAction {
+                b.startLogo.visibility = View.GONE
+            }.start()
+        }
+    }
+
+    /** Výřez bitmapy bez průhledného okraje. */
+    private fun trimTransparent(src: Bitmap): Bitmap {
+        val w = src.width
+        val px = IntArray(w * src.height).also { src.getPixels(it, 0, w, 0, 0, w, src.height) }
+        var left = w; var top = src.height; var right = -1; var bottom = -1
+        for (y in 0 until src.height) for (x in 0 until w) {
+            if (Color.alpha(px[y * w + x]) > 24) {
+                if (x < left) left = x
+                if (x > right) right = x
+                if (y < top) top = y
+                if (y > bottom) bottom = y
+            }
+        }
+        if (right < left || bottom < top) return src
+        return Bitmap.createBitmap(src, left, top, right - left + 1, bottom - top + 1)
+    }
+
+    /** Mapa v nočních barvách podle volby v nastavení; bez polohy GPS se slunce počítá pro střed mapy. */
+    private fun applyNightMap() {
+        val night = when (Settings.nightMap) {
+            NightMap.AUTO -> {
+                val p = lastLocation?.let { LatLong(it.latitude, it.longitude) } ?: mapCtl.center
+                Sun.isNight(p.latitude, p.longitude)
+            }
+            NightMap.APP_THEME ->
+                resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+            NightMap.ALWAYS -> true
+            NightMap.NEVER -> false
+        }
+        mapCtl.setNight(night)
+    }
+
+    /**
+     * Jezdec při navigaci do spodní třetiny viditelné mapy mezi horním pruhem s pokynem
+     * a spodním panelem (doprostřed té třetiny) – před motorkou je vidět víc silnice.
+     */
     private fun updateNavPivot() {
         val h = b.mapView.height.takeIf { it > 0 } ?: return
         val mapTop = IntArray(2).also(b.mapView::getLocationInWindow)[1]
-        val top = IntArray(2).also(b.navBanner::getLocationInWindow)[1] + b.navBanner.height - mapTop
+        val top = IntArray(2).also(b.navTop::getLocationInWindow)[1] + b.navTop.height - mapTop
         val bottom = IntArray(2).also(b.navPanel::getLocationInWindow)[1] - mapTop
         if (bottom <= top) return
-        mapCtl.setNavPivot(((top + bottom) / 2f - h / 2f) / (h / 2f))
+        val rider = top + (bottom - top) * NAV_RIDER_POSITION
+        mapCtl.setNavPivot((rider - h / 2f) / (h / 2f))
     }
 
     /** Upozornění na novou verzi – ne během navigace a ne u verze, kterou uživatel zavřel. */
@@ -294,6 +403,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     override fun onDestroy() {
+        rideSensors?.stop()
         b.root.removeCallbacks(stopWaitingForFix)
         getSystemService(LocationManager::class.java).removeUpdates(this)
         tts?.shutdown()
@@ -321,8 +431,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 gravity = if (wide) Gravity.BOTTOM or Gravity.START else Gravity.BOTTOM
             }
         }
-        b.navBanner.updateLayoutParams<ViewGroup.LayoutParams> {
-            width = if (wide) (420 * density).toInt() else ViewGroup.LayoutParams.MATCH_PARENT
+        // Menu + panel s manévrem; na tabletu stejně široké jako spodní panel a menu vedle něj
+        b.navTop.updateLayoutParams<ViewGroup.LayoutParams> {
+            width = if (wide) ((420 + 84) * density).toInt() else ViewGroup.LayoutParams.MATCH_PARENT
         }
     }
 
@@ -330,14 +441,21 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val loc = IntArray(2)
         b.btnZoomOut.getLocationOnScreen(loc)
         val zoomBottom = loc[1] + b.btnZoomOut.height
-        val covered = listOf(b.routePanel, b.navPanel).any { panel ->
-            panel.visibility == View.VISIBLE && run { panel.getLocationOnScreen(loc); loc[1] < zoomBottom }
-        }
+        // Schované tlačítko nemá polohu, záznam leží 24 dp pod „−“ a je stejně velký
+        val recBottom = zoomBottom + (24 * resources.displayMetrics.density).toInt() + b.btnZoomOut.height
+        fun coveredAbove(bottom: Int): Boolean =
+            listOf(b.routePanel, b.navPanel).any { panel ->
+                panel.visibility == View.VISIBLE && run { panel.getLocationOnScreen(loc); loc[1] < bottom }
+            }
         // FAB se musí schovávat přes show()/hide(), přímá změna viditelnosti ho nevykreslí zpátky
-        for (fab in listOf(b.btnZoomIn, b.btnZoomOut)) {
-            if (covered && fab.isOrWillBeShown) fab.hide()
-            else if (!covered && fab.isOrWillBeHidden) fab.show()
+        fun FloatingActionButton.showIf(visible: Boolean) {
+            if (!visible && isOrWillBeShown) hide() else if (visible && isOrWillBeHidden) show()
         }
+        val zoomCovered = coveredAbove(zoomBottom)
+        b.btnZoomIn.showIf(!zoomCovered)
+        b.btnZoomOut.showIf(!zoomCovered)
+        // Záznam jen za navigace; pod spodním panelem by nešel stisknout
+        b.btnNavRecord.showIf(b.navPanel.visibility == View.VISIBLE && !coveredAbove(recBottom))
     }
 
     /** Mapa se kreslí pod systémové lišty, ovládací prvky se od nich odsadí. */
@@ -376,11 +494,25 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun showMenu() {
         fun item(text: Int, action: () -> Unit) = GloveMenu.Item(getString(text), action = action)
+        val recording =
+            if (Recording.state.value.active) item(R.string.recording_stop) { confirmStopRecording() }
+            else item(R.string.recording_start) { requestRecording() }
+        if (navigator != null || recalculating) {
+            // Za navigace jen to, co jízdu nepřeruší; nový cíl se rovnou naviguje
+            GloveMenu.show(this, null, listOf(
+                item(R.string.search_title) { openSearch() },
+                recording,
+                item(R.string.lean_title) { startActivity(Intent(this, LeanActivity::class.java)) },
+                item(R.string.offline_data) { openDownloads() },
+                item(R.string.settings_title) { startActivity(Intent(this, SettingsActivity::class.java)) },
+                item(R.string.stop_navigation_full) { stopNavigation() },
+            ))
+            return
+        }
         val items = mutableListOf(
             item(R.string.search_title) { openSearch() },
             item(R.string.round_trip) { askRoundTripLength() },
-            if (Recording.state.value.active) item(R.string.recording_stop) { confirmStopRecording() }
-            else item(R.string.recording_start) { requestRecording() },
+            recording,
             item(R.string.tracks_title) { tracksLauncher.launch(Intent(this, TracksActivity::class.java)) },
             item(R.string.lean_title) { startActivity(Intent(this, LeanActivity::class.java)) },
             item(R.string.import_gpx) { importLauncher.launch(arrayOf("*/*")) },
@@ -434,7 +566,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             val h = b.mapView.height
             // Spodní hrana vyhledávací lišty (nebo navigačního panelu); sloupec tlačítek
             // vpravo pod ní mapu nezakrývá, takže se do volné plochy nepočítá
-            val bar = if (b.navBanner.visibility == View.VISIBLE) b.navBanner else b.searchBar
+            val bar = if (b.navTop.visibility == View.VISIBLE) b.navTop else b.searchBar
             val top = IntArray(2).also(bar::getLocationInWindow)[1] + bar.height -
                 IntArray(2).also(b.mapView::getLocationInWindow)[1]
             val panel = b.routePanel.takeIf { it.visibility == View.VISIBLE }
@@ -506,9 +638,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         lastLocation = location
         val pos = LatLong(location.latitude, location.longitude)
-        mapCtl.setLocation(pos, headingFor(location, pos))
-
+        val heading = headingFor(location, pos)
+        // Za navigace ikonu posouvá sledování trasy – na stejné místo jako kameru
         navigator?.let { onNavigationFix(it, location, pos); return }
+        mapCtl.setLocation(pos, heading)
 
         // Na starou uloženou ani nepřesnou polohu mapu necentrujeme – poskakovala by
         if (waitingForFix && isFresh(location)) {
@@ -516,7 +649,10 @@ class MainActivity : AppCompatActivity(), LocationListener {
             else b.gpsChip.text = getString(R.string.waiting_for_precise_location_accuracy, location.accuracy.roundToInt())
         }
         // Rozhodujeme až podle dost přesné polohy změřené po spuštění
-        if (askForBike && location.elapsedRealtimeNanos >= launchedAtNanos && location.accuracy <= BIKE_FIX_ACCURACY) {
+        // Dotaz na motorku až po úvodním logu, jinak by se ukázal přes něj
+        if (askForBike && b.startLogo.visibility != View.VISIBLE &&
+            location.elapsedRealtimeNanos >= launchedAtNanos && location.accuracy <= BIKE_FIX_ACCURACY
+        ) {
             askForBike = false
             offerNavigationToBike(location, pos)
         }
@@ -690,6 +826,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
         vias.clear()
         viasFromTrack = false
         roundTripKm = null
+        // Cíl vybraný za jízdy z menu: navigace pokračuje rovnou k novému cíli
+        val here = lastLocation
+        if ((navigator != null || recalculating) && here != null) {
+            b.destinationName.text = name
+            setWalking(position == bikePosition())
+            b.navInstruction.setText(R.string.recalculating)
+            recalculateFrom(LatLong(here.latitude, here.longitude))
+            return
+        }
         // Trasa z aktuální polohy, pokud ji známe
         lastLocation?.let { start = LatLong(it.latitude, it.longitude) }
         onWaypointsChanged(zoomWhenDone = !thenNavigate, onDone = { if (thenNavigate) startNavigation() })
@@ -829,6 +974,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
         route = r
         mapCtl.showRoute(r?.points)
+        // Okruh začíná i končí na stejném místě – šipky ukážou, kterým směrem vyjet
+        mapCtl.showDirection(r?.points?.takeIf { roundTripKm != null })
         b.btnNavigate.isEnabled = r != null
         // Volby trasy ukazujeme i bez trasy, aby šly změnit před výpočtem
         b.routeDetails.visibility = if (start != null && end != null) View.VISIBLE else View.GONE
@@ -998,9 +1145,18 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private var drawnRecordedPoints = 0
+    /** Výchozí barva tlačítka záznamu, když neběží (podle světlého/tmavého vzhledu). */
+    private var fabBackground: ColorStateList? = null
 
     private fun onRecordingState(state: Recording.State) {
         b.recChip.visibility = if (state.active) View.VISIBLE else View.GONE
+        // Během záznamu je tlačítko v navigaci červené a záznam zastavuje
+        b.btnNavRecord.apply {
+            val red = 0xFFC62828.toInt()
+            backgroundTintList = if (state.active) ColorStateList.valueOf(red) else fabBackground
+            imageTintList = ColorStateList.valueOf(if (state.active) Color.WHITE else red)
+            contentDescription = getString(if (state.active) R.string.recording_stop else R.string.recording_start)
+        }
         if (!state.active) {
             if (drawnRecordedPoints > 0) {
                 mapCtl.showRecorded(null)
@@ -1036,6 +1192,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         setNavigationUi(true)
         // K zaparkované motorce se jde pěšky
         setWalking(end != null && end == bikePosition())
+        // Náklon a souhrn jízdy se měří při každé navigaci na motorce
+        if (!mapCtl.walking) startRide()
         // Během navigace jen vybraná trasa, šedé varianty by mátly
         mapCtl.showAlternatives(emptyList())
         mapCtl.startFollowing()
@@ -1059,22 +1217,107 @@ class MainActivity : AppCompatActivity(), LocationListener {
         navigator = null
         recalculating = false
         tts?.stop()
+        camerasJob?.cancel()
+        camerasFor = null
+        routeCameras = emptyList()
+        warnedCameras.clear()
+        slowDownCameras.clear()
+        b.radarCard.visibility = View.GONE
+        // Po navigaci zpět na běžnou mapu s vyhledáváním – trasa i panel s jejím výběrem zmizí
+        clearRoute()
         setNavigationUi(false)
-        mapCtl.stopFollowing()
-        route?.let { zoomToRoute(it) }
+        mapCtl.stopFollowing(lastLocation?.let { LatLong(it.latitude, it.longitude) })
+        finishRide()?.let(::offerRideSummary)
     }
+
+    // ---------------------------------------------------------------- náklon a souhrn jízdy
+
+    private var rideMeter: LeanMeter? = null
+    private var rideSensors: LeanSensors? = null
+    private var rideTracker: RideTracker? = null
+
+    private fun startRide() {
+        if (rideMeter != null) return
+        val meter = LeanMeter(LeanSensors.calibration(this))
+        rideMeter = meter
+        rideSensors = LeanSensors(this, meter, ::displayRotation).also { it.start() }
+        rideTracker = RideTracker(System.currentTimeMillis())
+    }
+
+    private fun onRideFix(location: Location, pos: LatLong) {
+        val meter = rideMeter ?: return
+        if (location.hasSpeed()) meter.onSpeed(location.speed.toDouble(), location.elapsedRealtimeNanos)
+        rideTracker?.onFix(pos, location.accuracy, location.speed, location.time)
+    }
+
+    /** Ukončí měření; maxima z jízdy se přidají k rekordům na obrazovce Náklon. */
+    private fun finishRide(): RideSummary? {
+        val meter = rideMeter ?: return null
+        rideSensors?.stop()
+        val summary = rideTracker?.summary(meter.stats, System.currentTimeMillis())
+        rideMeter = null
+        rideSensors = null
+        rideTracker = null
+        val s = meter.stats
+        val best = LeanSensors.loadStats(this)
+        LeanSensors.saveStats(this, LeanStats(
+            maxLeft = maxOf(best.maxLeft, s.maxLeft),
+            maxRight = maxOf(best.maxRight, s.maxRight),
+            maxSpeed = maxOf(best.maxSpeed, s.maxSpeed),
+            maxAccel = maxOf(best.maxAccel, s.maxAccel),
+            maxBrake = maxOf(best.maxBrake, s.maxBrake),
+        ))
+        return summary?.takeIf { it.distanceMeters >= MIN_RIDE_SUMMARY_METERS }
+    }
+
+    private fun offerRideSummary(r: RideSummary) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.ride_done_title)
+            .setMessage(getString(R.string.ride_done_message, formatDistance(r.distanceMeters), formatDuration(r.totalSeconds)))
+            .setNegativeButton(R.string.ride_no, null)
+            .setPositiveButton(R.string.ride_show) { _, _ -> showRideSummary(r) }
+            .show()
+    }
+
+    private fun showRideSummary(r: RideSummary) {
+        fun kmh(mps: Double) = "${(mps * 3.6).roundToInt()} km/h"
+        fun g(a: Double) = "%.2f g".format(a / LeanMeter.G)
+        val l = r.lean
+        val rows = listOf(
+            R.string.ride_distance to formatDistance(r.distanceMeters),
+            R.string.ride_time to formatDuration(r.totalSeconds) + " (" + getString(R.string.ride_moving, formatDuration(r.movingSeconds)) + ")",
+            R.string.ride_avg_speed to kmh(r.avgSpeed),
+            R.string.lean_max_speed to kmh(l.maxSpeed),
+            R.string.lean_max_left to "${l.maxLeft.roundToInt()}°",
+            R.string.lean_max_right to "${l.maxRight.roundToInt()}°",
+            R.string.lean_max_accel to g(l.maxAccel),
+            R.string.lean_max_brake to g(l.maxBrake),
+        )
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.ride_summary_title)
+            .setMessage(rows.joinToString("\n") { (label, value) -> "${getString(label)}: $value" })
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun displayRotation(): Int =
+        if (Build.VERSION.SDK_INT >= 30) display?.rotation ?: Surface.ROTATION_0
+        else windowManager.defaultDisplay.rotation
 
     private fun setNavigationUi(on: Boolean) {
         b.searchBar.visibility = if (on) View.GONE else View.VISIBLE
         b.btnDownloads.visibility = if (on) View.GONE else View.VISIBLE
         b.routePanel.visibility = if (!on && end != null) View.VISIBLE else View.GONE
-        b.navBanner.visibility = if (on) View.VISIBLE else View.GONE
+        b.navTop.visibility = if (on) View.VISIBLE else View.GONE
         b.navPanel.visibility = if (on) View.VISIBLE else View.GONE
+        if (on) b.btnNavRecord.show() else b.btnNavRecord.hide()
         if (on) b.updateCard.visibility = View.GONE else showUpdateCard()
         stopNavigationOnBack.isEnabled = on
         if (on) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             b.navArrow.text = ""
+            b.navArrow.setCompoundDrawables(null, null, null, null)
             b.navDistance.text = ""
             b.navInstruction.setText(R.string.calculating)
             b.navEta.text = ""
@@ -1087,6 +1330,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun onNavigationFix(nav: Navigator, location: Location, pos: LatLong) {
         val state = nav.update(pos, location.accuracy, location.speed)
+        onRideFix(location, pos)
 
         // Mapa sleduje jezdce; natočení a naklonění podle režimu zobrazení.
         // Na trase podle směru silnice, mimo ni podle kurzu z GPS (jen v pohybu, jinak je nespolehlivý).
@@ -1095,17 +1339,18 @@ class MainActivity : AppCompatActivity(), LocationListener {
         mapCtl.follow(state.snapped.takeUnless { state.offRoute } ?: pos, heading, location.speed)
 
         showLanes(state.next?.takeIf { state.toNext < LANES_DISTANCE && !state.offRoute })
-        b.navArrow.text = Navigator.arrow(state.next)
+        showManeuverArrow(state.next)
         b.navDistance.text = formatDistance(state.toNext)
         b.navInstruction.text = state.next?.let { Navigator.instruction(it).replaceFirstChar { c -> c.uppercase() } }
         val eta = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(System.currentTimeMillis() + state.remainingSeconds.toLong() * 1000))
         b.navEta.text = getString(R.string.nav_eta, eta)
         b.navRemaining.text = "${formatDistance(state.remainingMeters)} · ${formatDuration(state.remainingSeconds)}"
         b.navSpeed.text = if (location.hasSpeed()) (location.speed * 3.6f).roundToInt().toString() else getString(R.string.speed_unknown)
+        showSpeedCamera(nav.route, state, location)
 
         when {
             state.arrived -> {
-                b.navArrow.text = Navigator.arrow(Maneuver(0, 0.0, "END", 0))
+                showManeuverArrow(Maneuver(0, 0.0, "END", 0))
                 b.navDistance.text = ""
                 b.navInstruction.text = getString(R.string.arrived)
             }
@@ -1114,6 +1359,75 @@ class MainActivity : AppCompatActivity(), LocationListener {
                 speak(getString(R.string.recalculating).removeSuffix("…"))
                 recalculateFrom(pos, passedSegment = state.segment)
             }
+        }
+    }
+
+    /**
+     * Symbol dalšího manévru. Kruhový objezd se kreslí jako kruh se šipkou ve směru objíždění
+     * (u nás proti směru hodinových ručiček) a číslem výjezdu uprostřed, ostatní jako znak šipky.
+     */
+    private fun showManeuverArrow(m: Maneuver?) {
+        val roundabout = m?.command == "RNDB" || m?.command == "RNLB"
+        if (roundabout) {
+            val px = (56 * resources.displayMetrics.density).toInt()
+            val icon = RoundaboutIcon(m!!.exit, clockwise = m.command == "RNLB", color = b.navArrow.currentTextColor)
+                .apply { setBounds(0, 0, px, px) }
+            b.navArrow.text = ""
+            b.navArrow.setCompoundDrawables(null, icon, null, null)
+        } else {
+            b.navArrow.setCompoundDrawables(null, null, null, null)
+            b.navArrow.text = Navigator.arrow(m)
+        }
+    }
+
+    // ---------------------------------------------------------------- radary
+
+    /** Radary na navigované trase (přiřazují se na pozadí po každém výpočtu trasy). */
+    private var routeCameras: List<CameraOnRoute> = emptyList()
+    private var camerasFor: Route? = null
+    private var camerasJob: Job? = null
+    /** Radary, na které už jezdec byl upozorněn (a kde už slyšel „zpomalte“). */
+    private val warnedCameras = mutableSetOf<LatLong>()
+    private val slowDownCameras = mutableSetOf<LatLong>()
+
+    private fun loadCameras(r: Route) {
+        camerasJob?.cancel()
+        routeCameras = emptyList()
+        camerasFor = r
+        camerasJob = lifecycleScope.launch {
+            val all = SpeedCameras.all()
+            routeCameras = withContext(Dispatchers.Default) { SpeedCameras.onRoute(r, all) }
+        }
+    }
+
+    /**
+     * Štítek s nejbližším radarem před jezdcem; hlas upozorní jednou s předstihem
+     * a ještě jednou, když jezdec u radaru jede rychleji, než se tam smí.
+     */
+    private fun showSpeedCamera(r: Route, state: NavState, location: Location) {
+        if (camerasFor !== r) loadCameras(r)
+        val along = r.distances[state.segment] + r.points[state.segment].sphericalDistance(state.snapped)
+        val fast = location.speed > 20 // ~70 km/h
+        val range = if (fast) CAMERA_WARN_FAST else CAMERA_WARN
+        val next = routeCameras.takeUnless { state.offRoute }
+            ?.firstOrNull { it.along - along in -CAMERA_PASSED..range }
+        if (next == null) {
+            b.radarCard.visibility = View.GONE
+            return
+        }
+        val cam = next.camera
+        val ahead = (next.along - along).coerceAtLeast(0.0)
+        val kmh = if (location.hasSpeed()) location.speed * 3.6f else null
+        val tooFast = cam.maxspeed != null && kmh != null && kmh > cam.maxspeed + CAMERA_TOLERANCE_KMH
+        val label = getString(if (cam.section) R.string.radar_section else R.string.radar)
+        b.radarText.text = listOfNotNull(label, cam.maxspeed?.toString(), formatDistance(ahead)).joinToString(" · ")
+        b.radarCard.setCardBackgroundColor(if (tooFast) 0xFFC62828.toInt() else 0xFF263238.toInt())
+        b.radarCard.visibility = View.VISIBLE
+        if (warnedCameras.add(cam.position)) {
+            speak(cam.maxspeed?.let { getString(R.string.radar_speak_limit, label, it) } ?: getString(R.string.radar_speak, label), queue = true)
+        }
+        if (tooFast && ahead < CAMERA_WARN && slowDownCameras.add(cam.position)) {
+            speak(getString(R.string.radar_slow_down), queue = true)
         }
     }
 
@@ -1176,8 +1490,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private fun nearestIndex(r: Route, p: LatLong): Int =
         r.points.indices.minByOrNull { r.points[it].sphericalDistance(p) } ?: 0
 
-    private fun speak(text: String) {
-        if (ttsReady) tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, text)
+    /** @param queue zařadit za právě mluvený pokyn místo jeho přerušení (upozornění na radar) */
+    private fun speak(text: String, queue: Boolean = false) {
+        if (ttsReady) tts?.speak(text, if (queue) TextToSpeech.QUEUE_ADD else TextToSpeech.QUEUE_FLUSH, null, text)
     }
 
     private companion object {
@@ -1189,6 +1504,25 @@ class MainActivity : AppCompatActivity(), LocationListener {
         const val BIKE_FIX_ACCURACY = 30f
         /** Přesnost polohy (m), na kterou se mapa vycentruje. */
         const val PRECISE_ACCURACY = 30f
+        /** Kde stojí jezdec při navigaci: podíl výšky volné mapy od horního pruhu (5/6 = střed spodní třetiny). */
+        const val NAV_RIDER_POSITION = 5f / 6f
+        /** Odkud upozornit na radar (m), nad ~70 km/h dřív. */
+        const val CAMERA_WARN = 400.0
+        const val CAMERA_WARN_FAST = 700.0
+        /** Štítek ještě chvíli po minutí radaru (nepřesnost polohy). */
+        const val CAMERA_PASSED = 15.0
+        /** O kolik km/h nad povolenou rychlost je štítek červený a zazní „zpomalte“. */
+        const val CAMERA_TOLERANCE_KMH = 3
+        /** Jak dlouho zůstane úvodní logo (ms). */
+        const val START_LOGO_MS = 5_000L
+        /** Kdyby nepřišel konec systémové úvodní obrazovky, odpočet začne tolik po prvním vykreslení. */
+        const val START_LOGO_FALLBACK_MS = 3_000L
+        /** Rozlišení, ve kterém se logo vykreslí a ořízne (loga výrobců mají 432 px). */
+        const val START_LOGO_PX = 1080
+        /** Okraj kolem úvodního loga. */
+        const val START_LOGO_MARGIN_DP = 24
+        /** Po kratší jízdě (navigace hned zrušená) se souhrn nenabízí (m). */
+        const val MIN_RIDE_SUMMARY_METERS = 300.0
         /** Jak dlouho nejvýš čekat na přesnou polohu, než se vezme nejlepší dostupná. */
         const val PRECISE_TIMEOUT_MS = 20_000L
     }

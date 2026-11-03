@@ -145,7 +145,9 @@ class Navigator(val route: Route, private val speak: (String) -> Unit) {
             "TSLL", "KL", "EL" -> "↖"
             "TSLR", "KR", "ER" -> "↗"
             "TU" -> "↶"
-            "RNDB", "RNLB" -> "⟳"
+            // Pravostranný provoz objíždí proti směru hodinových ručiček, levostranný po směru
+            "RNDB" -> "⟲"
+            "RNLB" -> "⟳"
             "END" -> "⚑"
             else -> "↑"
         }

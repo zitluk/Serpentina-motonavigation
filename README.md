@@ -11,19 +11,21 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 ## Co umí
 
 - **Offline mapy** ve 3D (nakloněná, po směru jízdy), 2D po směru jízdy nebo se severem nahoře; bez rušivých vrstev (parkoviště, obchody, MHD…), s 3D budovami
+- **Noční mapa** v tmavých barvách – automaticky po západu slunce, podle vzhledu aplikace, vždy nebo nikdy
 - **Trasy** bez internetu: Nejrychlejší / Nejkratší / Ekonomická / Více zatáček / Maximum zatáček, volby bez dálnic / bez šotoliny / bez trajektů, ke každému cíli až 3 varianty s délkou a časem
-- **Navigace** s hlasovými pokyny česky i anglicky, přepočtem po sjetí z trasy a doporučením jízdního pruhu před manévrem na vícepruhové silnici; během navigace rychlost podle GPS
+- **Navigace** s hlasovými pokyny česky i anglicky, přepočtem po sjetí z trasy a doporučením jízdního pruhu před manévrem na vícepruhové silnici; během navigace rychlost podle GPS a upozornění na radary (hlasem i štítkem s povolenou rychlostí, červeně při překročení)
 - **Vyhledávání cíle** – obce, místa, body zájmu i souřadnice, s diakritikou i bez ní; stejnojmenné obce rozlišené okresem. Rychlé volby **Čerpací stanice**, **Parkoviště** a **Občerstvení** najdou nejbližší místa
 - **Projížďka po okolí** – okruh zvolené délky (20–300 km) z aktuální polohy, „Jiný okruh“ vylosuje jiný směr
 - **Poloha motorky** – po ukončení navigace si aplikace pamatuje, kde motorka stojí; při dalším spuštění dál než 20 m od ní nabídne navigaci k motorce (na mapě se pak ukazuje chodec)
 - **Záznam jízdy** do GPX (i se zhasnutou obrazovkou) se statistikami: vzdálenost, čas, průměrná a max. rychlost, stoupání
-- **Náklon motocyklu** – ukazatel náklonu, maximální náklon vlevo/vpravo, rychlost, zrychlení a brzdění v g
+- **Náklon motocyklu** – ukazatel náklonu, maximální náklon vlevo/vpravo, rychlost, zrychlení a brzdění v g; při každé navigaci se měří automaticky a po jejím ukončení aplikace nabídne souhrn jízdy (vzdálenost, čas, průměrná a max. rychlost, max. náklon, zrychlení a brzdění)
 - **GPX** – import, zobrazení, navigace po stopě, sdílení
 - **Ovládání v rukavicích** – velká tlačítka v celé aplikaci, menu a volby přes celou šířku displeje
 - **Ikona polohy** – šipka nebo silueta motocyklu (sportovní, cestovní, naked, enduro, chopper, skútr) v 8 barvách, natočená po směru jízdy
-- **Výrobce motocyklu** změní ikonu aplikace i logo při spuštění; typ motocyklu přednastaví typ trasy, šotolinu, dálnice a odhad času
+- **Výrobce motocyklu** změní ikonu aplikace i úvodní logo přes celou šířku displeje; typ motocyklu přednastaví typ trasy, šotolinu, dálnice a odhad času
 - **Nastavení** – světlý / tmavý vzhled, jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), vypnutí mobilních dat (stahování, kontrola aktualizací a zpětná vazba jen přes Wi-Fi)
 - **Zpětná vazba** vývojáři přímo z aplikace a možnost drobné podpory přes QR Platbu
+- **Sdílení aplikace** – QR kód s odkazem ke stažení v Nastavení, nebo odeslání odkazu zprávou
 
 ## Ovládání
 
@@ -36,7 +38,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - Menu ☰ → **Trasy a jízdy** → Zobrazit / Navigovat po trase / Sdílet / Smazat
 - Navigace po GPX naplánuje trasu po silnicích přes body vybrané ze stopy, takže má pokyny i přepočet
 - Během navigace: další manévr nahoře, rychlost, příjezd a zbývající km dole, **Ukončit** (nebo tlačítko Zpět)
-- Mapy se stahují v aplikaci (**Stažení map**): mapa, body zájmu i data pro trasy. U stažené mapy se ukazuje datum dat a při novější verzi tlačítko Aktualizovat
+- Mapy se stahují v aplikaci (**Stažení map**) po zemích z celého světa, velké země i po částech (např. Itálie – Isole = Sardinie a Sicílie): mapa, body zájmu i data pro trasy. Zemi najdeš polem **Hledat zemi** (česky i anglicky, s diakritikou i bez), u každé je vidět přibližná velikost. U stažené mapy se ukazuje datum dat a při novější verzi tlačítko Aktualizovat
 
 ## Známá omezení
 
@@ -50,7 +52,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - Trasa k zaparkované motorce se plánuje jako pro motorku (jednosměrky, bez pěších zón).
 - Zatím bez stínování reliéfu a oblíbených míst.
 - Náklon předpokládá telefon na řídítkách na výšku, vyrovnaný kalibrací.
-- Tmavý vzhled mění obrazovky aplikace, mapa zůstává světlá.
+- Radary pocházejí z OpenStreetMap – některé mohou chybět, mobilní měření v datech není.
 
 ## Data a licence
 

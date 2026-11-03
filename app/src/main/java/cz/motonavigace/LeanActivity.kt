@@ -4,10 +4,6 @@ import android.Manifest
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -34,15 +30,12 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /** Ukazatel náklonu motorky s maximálním náklonem, rychlostí a zrychlením. */
-class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener {
+class LeanActivity : AppCompatActivity(), LocationListener {
 
     private lateinit var b: ActivityLeanBinding
     private lateinit var prefs: SharedPreferences
-    private lateinit var sensors: SensorManager
     private lateinit var meter: LeanMeter
-    /** Bez senzoru tíže si ji odvodíme z akcelerometru dolní propustí. */
-    private var useAccelerometer = false
-    private val lowPass = FloatArray(3)
+    private lateinit var sensors: LeanSensors
 
     private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startLocation()
@@ -57,8 +50,8 @@ class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         prefs = getSharedPreferences("lean", MODE_PRIVATE)
-        meter = LeanMeter(prefs.getFloat("calibration", 0f).toDouble(), loadStats())
-        sensors = getSystemService(SensorManager::class.java)
+        meter = LeanMeter(LeanSensors.calibration(this), LeanSensors.loadStats(this))
+        sensors = LeanSensors(this, meter, ::displayRotation)
 
         b.maxLeft.label.setText(R.string.lean_max_left)
         b.maxRight.label.setText(R.string.lean_max_right)
@@ -67,7 +60,7 @@ class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener 
         b.accel.label.setText(R.string.lean_accel)
         b.maxAccel.label.setText(R.string.lean_max_accel)
         b.maxBrake.label.setText(R.string.lean_max_brake)
-        if (sensors.getDefaultSensor(Sensor.TYPE_GYROSCOPE) == null) {
+        if (!sensors.hasGyro) {
             b.hint.text = getString(R.string.lean_hint) + "\n" + getString(R.string.lean_no_gyro)
         }
 
@@ -107,13 +100,7 @@ class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener 
 
     override fun onResume() {
         super.onResume()
-        val gravity = sensors.getDefaultSensor(Sensor.TYPE_GRAVITY)
-        useAccelerometer = gravity == null
-        val g = gravity ?: sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        g?.let { sensors.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME) }
-        sensors.getDefaultSensor(Sensor.TYPE_GYROSCOPE)?.let {
-            sensors.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
-        }
+        sensors.start()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             startLocation()
         } else {
@@ -123,7 +110,7 @@ class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener 
 
     override fun onPause() {
         super.onPause()
-        sensors.unregisterListener(this)
+        sensors.stop()
         getSystemService(LocationManager::class.java).removeUpdates(this)
         saveStats()
     }
@@ -141,35 +128,6 @@ class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener 
     override fun onLocationChanged(location: Location) {
         if (location.hasSpeed()) meter.onSpeed(location.speed.toDouble(), location.elapsedRealtimeNanos)
     }
-
-    override fun onSensorChanged(event: SensorEvent) {
-        val (x, y) = toScreenAxes(event.values[0], event.values[1])
-        val z = event.values[2]
-        when (event.sensor.type) {
-            Sensor.TYPE_GRAVITY -> meter.onGravity(x, y, z)
-            Sensor.TYPE_ACCELEROMETER -> {
-                lowPass[0] += (x - lowPass[0]) * 0.1f
-                lowPass[1] += (y - lowPass[1]) * 0.1f
-                lowPass[2] += (z - lowPass[2]) * 0.1f
-                meter.onGravity(lowPass[0], lowPass[1], lowPass[2])
-            }
-            Sensor.TYPE_GYROSCOPE -> meter.onGyro(x, y, z, event.timestamp)
-        }
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
-
-    /**
-     * Senzory hlásí osy podle přirozené orientace telefonu; výpočet počítá s osou x
-     * vodorovně přes displej, takže při otočené obrazovce osy přemapujeme.
-     */
-    private fun toScreenAxes(x: Float, y: Float): Pair<Float, Float> =
-        when (displayRotation()) {
-            Surface.ROTATION_90 -> -y to x
-            Surface.ROTATION_180 -> -x to -y
-            Surface.ROTATION_270 -> y to -x
-            else -> x to y
-        }
 
     @Suppress("DEPRECATION")
     private fun displayRotation(): Int =
@@ -219,22 +177,5 @@ class LeanActivity : AppCompatActivity(), SensorEventListener, LocationListener 
     private fun kmh(mps: Double) = "${(mps * 3.6).roundToInt()} km/h"
     private fun gForce(a: Double) = "%.2f g".format(abs(a) / LeanMeter.G).let { if (a < -0.05) "−$it" else it }
 
-    private fun loadStats() = LeanStats(
-        maxLeft = prefs.getFloat("max_left", 0f).toDouble(),
-        maxRight = prefs.getFloat("max_right", 0f).toDouble(),
-        maxSpeed = prefs.getFloat("max_speed", 0f).toDouble(),
-        maxAccel = prefs.getFloat("max_accel", 0f).toDouble(),
-        maxBrake = prefs.getFloat("max_brake", 0f).toDouble(),
-    )
-
-    private fun saveStats() {
-        val s = meter.stats
-        prefs.edit {
-            putFloat("max_left", s.maxLeft.toFloat())
-            putFloat("max_right", s.maxRight.toFloat())
-            putFloat("max_speed", s.maxSpeed.toFloat())
-            putFloat("max_accel", s.maxAccel.toFloat())
-            putFloat("max_brake", s.maxBrake.toFloat())
-        }
-    }
+    private fun saveStats() = LeanSensors.saveStats(this, meter.stats)
 }

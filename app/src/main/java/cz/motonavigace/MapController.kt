@@ -2,6 +2,7 @@ package cz.motonavigace
 
 import android.content.Context
 import android.graphics.drawable.BitmapDrawable
+import android.view.Choreographer
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
@@ -28,13 +29,19 @@ import org.oscim.renderer.GLViewport
 import org.oscim.scalebar.DefaultMapScaleBar
 import org.oscim.scalebar.MapScaleBarLayer
 import org.oscim.theme.IRenderTheme
+import org.oscim.theme.ThemeCallback
+import org.oscim.theme.ThemeLoader
 import org.oscim.theme.XmlRenderThemeMenuCallback
 import org.oscim.theme.XmlRenderThemeStyleMenu
 import org.oscim.theme.internal.VtmThemes
+import org.oscim.theme.styles.CircleStyle
 import org.oscim.theme.styles.LineStyle
+import org.oscim.theme.styles.RenderStyle
+import org.oscim.theme.styles.TextStyle
 import org.oscim.tiling.source.mapfile.MapFileTileSource
 import org.oscim.tiling.source.mapfile.MultiMapFileTileSource
 import java.io.File
+import kotlin.math.abs
 
 /** Jak se mapa natáčí a naklání. */
 enum class MapViewMode(val id: Int, val short: String, @androidx.annotation.StringRes val title: Int) {
@@ -63,9 +70,22 @@ class MapController(
     private var loadedMaps: List<File> = emptyList()
 
     private val trackLayer = PathLayer(map, line(0xB08E24AA.toInt(), 5f))
-    private val routeLayer = PathLayer(map, line(0xCCE53935.toInt(), 7f))
+    // Trasa tmavě modrá – červená splývala s červenými a oranžovými silnicemi, řeky jsou světle modré
+    private val routeLayer = PathLayer(map, line(ROUTE_COLOR, 7f))
+    /** Šipky směru jízdy na okruhu (start = cíl, jinak by nebylo poznat, kudy vyjet). */
+    private var arrowBitmap = makeArrowBitmap()
+    private var shownDirection: List<LatLong>? = null
+    private val arrows = ItemizedLayer(map, arrowSymbol())
+
+    private fun makeArrowBitmap() = AndroidGraphics.drawableToBitmap(BitmapDrawable(context.resources,
+        MarkerIcons.directionArrow(context, routeColor())))
+
+    // Ne-billboard: šipka leží na mapě a otáčí se s ní. VTM drží natočení v symbolu,
+    // proto má každá šipka vlastní (obrázek sdílejí)
+    private fun arrowSymbol() = MarkerSymbol(arrowBitmap, MarkerSymbol.HotspotPlace.CENTER, false)
     private val altLayers = List(2) { PathLayer(map, line(0xAA78909C.toInt(), 6f)) }
-    private val recordedLayer = PathLayer(map, line(0xCC1E88E5.toInt(), 5f))
+    // Záznam jízdy tyrkysově, ať se neplete s modrou trasou
+    private val recordedLayer = PathLayer(map, line(0xCC00897B.toInt(), 5f))
     private val pinStart = symbol(R.drawable.ic_pin_start)
     private val pinVia = symbol(R.drawable.ic_pin_via)
     private val pinEnd = symbol(R.drawable.ic_pin_end)
@@ -100,6 +120,7 @@ class MapController(
         altLayers.forEach(layers::add)
         layers.add(routeLayer)
         layers.add(recordedLayer)
+        layers.add(arrows)
         layers.add(pins)
         layers.add(location)
 
@@ -141,9 +162,50 @@ class MapController(
         layers.add(2, buildings)
         layers.add(3, labels)
         baseLayers = listOf(tiles, buildings, labels)
-        theme = map.setTheme(VtmThemes.MOTORIDER.apply { menuCallback = MotoThemeMenu })
-        map.updateMap(true)
+        loadTheme()
         return true
+    }
+
+    // ---------------------------------------------------------------- noční mapa
+
+    /** Mapa v nočních barvách (tmavé plochy, světlejší silnice, světlé popisky). */
+    var night = false
+        private set
+
+    fun setNight(on: Boolean) {
+        if (on == night) return
+        night = on
+        // Tmavě modrá trasa by na tmavé mapě zanikla, v noci je světlejší
+        routeLayer.setStyle(line(routeColor(), 7f))
+        arrowBitmap = makeArrowBitmap()
+        shownDirection?.let(::showDirection)
+        if (baseLayers.isNotEmpty()) loadTheme() else map.updateMap(true)
+    }
+
+    private fun routeColor() = if (night) ROUTE_COLOR_NIGHT else ROUTE_COLOR
+
+    private fun loadTheme() {
+        val old = theme
+        val file = VtmThemes.MOTORIDER.apply { menuCallback = MotoThemeMenu }
+        val loaded = if (night) ThemeLoader.load(file, NightThemeCallback) else ThemeLoader.load(file)
+        map.setTheme(loaded)
+        theme = loaded
+        old?.dispose()
+        map.updateMap(true)
+    }
+
+    /** Přebarví styl mapy při načtení; ikony (pumpy, vyhlídky…) zůstávají. */
+    private object NightThemeCallback : ThemeCallback {
+        override fun getBitmap(bitmap: org.oscim.backend.canvas.Bitmap?) = bitmap
+        override fun getColor(origin: RenderStyle<*>?, color: Int): Int = NightColors.transform(
+            when (origin) {
+                is LineStyle, is CircleStyle -> NightColors.Kind.LINE
+                is TextStyle -> NightColors.Kind.TEXT
+                // Plochy, 3D budovy a pozadí mapy (origin null)
+                else -> NightColors.Kind.AREA
+            },
+            color,
+        )
     }
 
     // ---------------------------------------------------------------- poloha mapy
@@ -200,7 +262,14 @@ class MapController(
         val pos = map.mapPosition
         pos.setTilt(if (newMode == MapViewMode.PERSPECTIVE_3D) TILT_3D else 0f)
         if (newMode == MapViewMode.NORTH_UP) pos.setBearing(0f)
-        if (navigating) map.viewport().setMapViewCenter(0f, navPivotY())
+        if (navigating) {
+            // Za navigace kameru vede plynulý pohyb, náklon a natočení k cíli dojedou samy
+            map.viewport().setMapViewCenter(0f, navPivotY())
+            camTilt = pos.tilt
+            if (newMode == MapViewMode.NORTH_UP) camBearing = 0f
+            kickGlide()
+            return
+        }
         map.animator().animateTo(400, pos)
     }
 
@@ -208,7 +277,12 @@ class MapController(
     private var navZoomOffset = 0
 
     fun zoomBy(delta: Int) {
-        if (navigating) navZoomOffset = (navZoomOffset + delta).coerceIn(-4, 3)
+        if (navigating) {
+            navZoomOffset = (navZoomOffset + delta).coerceIn(-4, 3)
+            camZoom = (camZoom + delta).coerceIn(3, 20)
+            kickGlide()
+            return
+        }
         val pos = map.mapPosition
         pos.setZoomLevel((pos.zoomLevel + delta).coerceIn(3, 20))
         map.animator().animateTo(250, pos)
@@ -220,32 +294,37 @@ class MapController(
         map.viewport().setMapViewCenter(0f, navPivotY())
     }
 
-    fun stopFollowing() {
+    /** Konec navigace; mapa se vrátí na [center] (poloha jezdce), pokud ho známe. */
+    fun stopFollowing(center: LatLong? = null) {
         navigating = false
+        camera = false
         map.viewport().setMapViewCenter(0f, 0f)
         val pos = map.mapPosition
+        center?.let { pos.setPosition(it.latitude, it.longitude) }
         pos.setTilt(if (mode == MapViewMode.PERSPECTIVE_3D) TILT_3D else 0f)
         map.animator().animateTo(300, pos)
     }
 
     /** Kamera při navigaci: jezdec ve spodní části, mapa natočená podle režimu. */
     fun follow(p: LatLong, headingDeg: Float?, speedMps: Float) {
-        val pos = map.mapPosition
-        pos.setPosition(p.latitude, p.longitude)
         val fast = speedMps > 22
         val auto = if (mode == MapViewMode.PERSPECTIVE_3D) (if (fast) 14 else 15) else (if (fast) 15 else 16)
-        pos.setZoomLevel((auto + navZoomOffset).coerceIn(3, 20))
-        when (mode) {
-            MapViewMode.NORTH_UP -> { pos.setBearing(0f); pos.setTilt(0f) }
-            MapViewMode.HEADING_2D -> { headingDeg?.let { pos.setBearing(-it) }; pos.setTilt(0f) }
-            MapViewMode.PERSPECTIVE_3D -> { headingDeg?.let { pos.setBearing(-it) }; pos.setTilt(TILT_3D) }
+        if (!camera) {
+            // Kamera navazuje na to, co je právě vidět
+            map.animator().cancel()
+            map.mapPosition.let { camBearing = it.bearing; camTilt = it.tilt }
+            camera = true
         }
-        map.animator().animateTo(900, pos)
+        camZoom = (auto + navZoomOffset).coerceIn(3, 20)
+        camTilt = if (mode == MapViewMode.PERSPECTIVE_3D) TILT_3D else 0f
+        camBearing = if (mode == MapViewMode.NORTH_UP) 0f else headingDeg?.let { -it } ?: camBearing
+        // Ikona jede na stejné místo jako kamera, jinak by se vůči sobě chvěly
+        setLocation(p, headingDeg)
     }
 
     /**
      * Svislá poloha jezdce při navigaci (−1 nahoře, 0 uprostřed, 1 dole). Nastavuje ji obrazovka
-     * na střed viditelné mapy mezi horním pruhem s pokynem a spodním panelem – níž by ho panel zakryl.
+     * do spodní třetiny viditelné mapy mezi horním pruhem s pokynem a spodním panelem.
      */
     private var navPivot = 0f
 
@@ -272,26 +351,113 @@ class MapController(
      * a po přepnutí 3D ↔ 2D se vyměnit za plochou ikonu (a zpět).
      */
     private fun refreshLocationView() {
-        val p = lastLocation ?: return
+        if (lastLocation == null) return
         val frame = if (!walking && mode == MapViewMode.PERSPECTIVE_3D && MarkerIcons.has3d(Settings.markerShape))
-            MarkerIcons.frame3d((lastHeading ?: 0f) + map.mapPosition.bearing) else -1
-        if (!markerKey.endsWith("/$frame")) setLocation(p, null)
+            MarkerIcons.frame3d((shownHeading ?: 0f) + map.mapPosition.bearing) else -1
+        if (!markerKey.endsWith("/$frame")) placeMarker()
     }
 
-    /** @param headingDeg směr jízdy od severu, null = neznámý (ikona míří na sever) */
+    /**
+     * Nová poloha jezdce. Ikona na ni nepřeskočí, ale do příští polohy z GPS (zhruba za sekundu)
+     * k ní plynule dojede.
+     * @param headingDeg směr jízdy od severu, null = neznámý (ponechá poslední směr)
+     */
     fun setLocation(p: LatLong, headingDeg: Float?) {
+        val first = lastLocation == null
         lastLocation = p
         headingDeg?.let { lastHeading = it }
+        val now = System.nanoTime()
+        if (first || walkingShown != walking || LatLong(shownLat, shownLon).sphericalDistance(p) > JUMP_METERS) {
+            // Na začátku, po přepnutí na chodce nebo po velkém skoku (ztráta signálu) rovnou přeskočí
+            shownLat = p.latitude
+            shownLon = p.longitude
+            shownHeading = lastHeading
+            walkingShown = walking
+        }
+        glideFromLat = shownLat
+        glideFromLon = shownLon
+        glideDurationNs = (now - lastFixNs).coerceIn(MIN_GLIDE_NS, MAX_GLIDE_NS)
+        glideStartNs = now
+        lastFixNs = now
+        placeMarker()
+        kickGlide()
+    }
+
+    // ---------------------------------------------------------------- plynulý pohyb
+
+    /** Zobrazená poloha a směr ikony – mezi polohami z GPS se posouvají po snímcích. */
+    private var shownLat = 0.0
+    private var shownLon = 0.0
+    private var shownHeading: Float? = null
+    private var walkingShown = false
+    private var glideFromLat = 0.0
+    private var glideFromLon = 0.0
+    private var glideStartNs = 0L
+    private var glideDurationNs = MIN_GLIDE_NS
+    private var lastFixNs = 0L
+
+    /** Za navigace jede kamera s ikonou; zoom, natočení a náklon plynule dobíhají k cíli. */
+    private var camera = false
+    private var camZoom = 15
+    private var camBearing = 0f
+    private var camTilt = 0f
+
+    private var glideRunning = false
+    private val glide = Choreographer.FrameCallback(::glideFrame)
+
+    private fun kickGlide() {
+        if (glideRunning) return
+        glideRunning = true
+        Choreographer.getInstance().postFrameCallback(glide)
+    }
+
+    private fun glideFrame(frameNs: Long) {
+        val p = lastLocation ?: run { glideRunning = false; return }
+        val t = ((frameNs - glideStartNs).toDouble() / glideDurationNs).coerceIn(0.0, 1.0)
+        shownLat = glideFromLat + (p.latitude - glideFromLat) * t
+        shownLon = glideFromLon + (p.longitude - glideFromLon) * t
+        var settled = t >= 1.0
+        lastHeading?.let { target ->
+            val next = approachAngle(shownHeading ?: target, target, HEADING_SMOOTHING)
+            shownHeading = next
+            if (abs(angleDiff(next, target)) > 0.5f) settled = false
+        }
+        placeMarker()
+        if (camera) {
+            val pos = map.mapPosition
+            pos.setPosition(shownLat, shownLon)
+            val targetScale = (1 shl camZoom).toDouble()
+            pos.setScale(pos.scale + (targetScale - pos.scale) * CAMERA_SMOOTHING)
+            pos.setBearing(approachAngle(pos.bearing, camBearing, CAMERA_SMOOTHING))
+            pos.setTilt(pos.tilt + (camTilt - pos.tilt) * CAMERA_SMOOTHING)
+            map.setMapPosition(pos)
+            if (abs(pos.scale / targetScale - 1) > 0.01 || abs(angleDiff(pos.bearing, camBearing)) > 0.5f ||
+                abs(pos.tilt - camTilt) > 0.5f
+            ) settled = false
+        }
+        if (settled) glideRunning = false else Choreographer.getInstance().postFrameCallback(glide)
+    }
+
+    /** Rozdíl úhlů v rozsahu −180…180°. */
+    private fun angleDiff(from: Float, to: Float): Float = ((to - from) % 360 + 540) % 360 - 180
+
+    /** Úhel posunutý o [factor] zbývajícího rozdílu k cíli, nejkratší stranou. */
+    private fun approachAngle(from: Float, to: Float, factor: Float): Float =
+        ((from + angleDiff(from, to) * factor) % 360 + 360) % 360
+
+    /** Vykreslí ikonu na zobrazené poloze a ve zobrazeném směru. */
+    private fun placeMarker() {
+        val headingDeg = shownHeading
         val shape = Settings.markerShape
         // Ve 3D stojí motorka svisle a je vidět z úhlu kamery; plochá by na nakloněné mapě ležela
         val frame3d = if (!walking && mode == MapViewMode.PERSPECTIVE_3D && MarkerIcons.has3d(shape))
-            MarkerIcons.frame3d((lastHeading ?: 0f) + map.mapPosition.bearing) else -1
+            MarkerIcons.frame3d((headingDeg ?: 0f) + map.mapPosition.bearing) else -1
         val key = "${shape.id}/${Settings.markerColor}/$walking/$frame3d"
         if (key != markerKey) {
             markerKey = key
             locationItem = null
         }
-        val item = locationItem ?: MarkerItem("", "", GeoPoint(p.latitude, p.longitude)).also {
+        val item = locationItem ?: MarkerItem("", "", GeoPoint(shownLat, shownLon)).also {
             it.marker = if (walking) {
                 // Chodec je kreslený z boku: stojí na místě nohama a neotáčí se
                 MarkerSymbol(
@@ -317,7 +483,7 @@ class MapController(
             location.addItem(it)
             locationItem = it
         }
-        item.geoPoint = GeoPoint(p.latitude, p.longitude)
+        item.geoPoint = GeoPoint(shownLat, shownLon)
         // VTM otáčí ikonu ležící na mapě po směru hodinových ručiček, stejně jako kurz
         if (!walking && frame3d < 0) headingDeg?.let { item.setRotation(it) }
         location.populate()
@@ -325,6 +491,47 @@ class MapController(
     }
 
     fun showRoute(points: List<LatLong>?) = setPath(routeLayer, points)
+
+    /** Šipky ve směru jízdy podél trasy (u okruhu); null je smaže. */
+    fun showDirection(points: List<LatLong>?) {
+        shownDirection = points
+        arrows.removeAllItems()
+        if (points != null && points.size >= 2) {
+            val cumulative = DoubleArray(points.size)
+            for (i in 1 until points.size) cumulative[i] = cumulative[i - 1] + points[i - 1].sphericalDistance(points[i])
+            val length = cumulative.last()
+            val step = maxOf(1000.0, length / ARROWS_ALONG)
+            val at = (ARROWS_NEAR_START + generateSequence(step) { it + step }.takeWhile { it < length - 300 })
+                .filter { it < length - 300 }
+            val items = mutableListOf<MarkerInterface>()
+            var i = 1
+            for (d in at.sorted()) {
+                while (i < points.lastIndex && cumulative[i] < d) i++
+                val a = points[i - 1]
+                val b = points[i]
+                val f = if (cumulative[i] > cumulative[i - 1]) (d - cumulative[i - 1]) / (cumulative[i] - cumulative[i - 1]) else 0.0
+                val lat = a.latitude + (b.latitude - a.latitude) * f.coerceIn(0.0, 1.0)
+                val lon = a.longitude + (b.longitude - a.longitude) * f.coerceIn(0.0, 1.0)
+                items += MarkerItem("", "", GeoPoint(lat, lon)).apply {
+                    marker = arrowSymbol()
+                    // VTM otáčí ikonu ležící na mapě po směru hodinových ručiček, stejně jako kurz
+                    setRotation(bearing(a, b))
+                }
+            }
+            arrows.addItems(items)
+        }
+        map.updateMap(true)
+    }
+
+    /** Kurz z [a] do [b] ve stupních od severu. */
+    private fun bearing(a: LatLong, b: LatLong): Float {
+        val dLon = Math.toRadians(b.longitude - a.longitude)
+        val lat1 = Math.toRadians(a.latitude)
+        val lat2 = Math.toRadians(b.latitude)
+        val y = Math.sin(dLon) * Math.cos(lat2)
+        val x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+        return ((Math.toDegrees(Math.atan2(y, x)) + 360) % 360).toFloat()
+    }
 
     /** Nevybrané alternativy šedě pod hlavní trasou. */
     fun showAlternatives(routes: List<List<LatLong>>) =
@@ -374,6 +581,20 @@ class MapController(
 
     companion object {
         private const val TILT_3D = 55f
+        private const val ROUTE_COLOR = 0xDD1565C0.toInt()
+        private const val ROUTE_COLOR_NIGHT = 0xEE42A5F5.toInt()
+        /** Šipky hned za startem, ať je směr vidět i na přiblížené mapě (m od startu). */
+        private val ARROWS_NEAR_START = listOf(120.0, 350.0, 700.0)
+        /** Dál po okruhu zhruba tolik šipek, ale ne hustěji než po kilometru. */
+        private const val ARROWS_ALONG = 14
+        /** Skok polohy, po kterém ikona nedojíždí, ale rovnou přeskočí (ztráta signálu). */
+        private const val JUMP_METERS = 300.0
+        /** Ikona dojíždí k nové poloze za dobu od předchozí polohy z GPS, ale v těchto mezích. */
+        private const val MIN_GLIDE_NS = 300_000_000L
+        private const val MAX_GLIDE_NS = 1_500_000_000L
+        /** Podíl zbývajícího otočení ikony, zoomu, natočení a náklonu kamery za jeden snímek. */
+        private const val HEADING_SMOOTHING = 0.15f
+        private const val CAMERA_SMOOTHING = 0.08f
     }
 
     /**
