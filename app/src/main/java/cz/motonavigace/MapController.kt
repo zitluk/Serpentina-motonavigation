@@ -116,6 +116,9 @@ class MapController(
             ) {
                 // Gesto za navigace: kamera přestane jezdce chvíli sledovat, ať jde prohlédnout trasu
                 if (navigating) freeLookUntil = SystemClock.uptimeMillis() + FREE_LOOK_MS
+                // Bez navigace gesto sledování polohy ukončí – mapa zůstane, kam ji jezdec posunul
+                tracking = false
+                lastUserMoveMs = SystemClock.uptimeMillis()
                 onUserMove?.invoke()
             }
             if (e == org.oscim.map.Map.POSITION_EVENT) view.post { refreshLocationView() }
@@ -287,6 +290,7 @@ class MapController(
         pos.setZoomLevel(pos.zoomLevel.coerceIn(4, 18))
         pos.setBearing(0f)
         pos.setTilt(0f)
+        tracking = false
         map.animator().animateTo(500, pos)
     }
 
@@ -350,10 +354,25 @@ class MapController(
     /** Navigace ve volném pohledu – tlačítko polohy pak vrací ke sledování. */
     val isFreeLook: Boolean get() = freeLook
 
+    /** Bez navigace: mapa drží polohu jezdce uprostřed, dokud s ní jezdec sám nepohne. */
+    var tracking = false
+        private set
+    private var lastUserMoveMs = 0L
+
+    /** Jak dlouho (ms) se jezdec mapy nedotkl. */
+    val sinceUserMoveMs: Long get() = SystemClock.uptimeMillis() - lastUserMoveMs
+
+    /** Mapa bude bez navigace sledovat polohu jezdce (po vycentrování na polohu). */
+    fun startTracking() {
+        tracking = true
+        kickGlide()
+    }
+
     fun startFollowing() {
         navZoomOffset = 0
         zoomSpeed = -1.0
         freeLookUntil = 0
+        tracking = false
         navigating = true
         map.viewport().setMapViewCenter(0f, navPivotY())
     }
@@ -504,7 +523,15 @@ class MapController(
             if (abs(pos.scale / targetScale - 1) > 0.01 || abs(angleDiff(pos.bearing, camBearing)) > 0.5f ||
                 abs(pos.tilt - camTilt) > 0.5f
             ) settled = false
-        }
+        } else if (tracking && !navigating && !map.animator().isActive) {
+            // Sledování bez navigace: střed mapy plynule dojíždí za ikonou, zoom a natočení nechá
+            val pos = map.mapPosition
+            val dLat = shownLat - pos.latitude
+            val dLon = shownLon - pos.longitude
+            pos.setPosition(pos.latitude + dLat * TRACK_SMOOTHING, pos.longitude + dLon * TRACK_SMOOTHING)
+            map.setMapPosition(pos)
+            if (abs(dLat) > 1e-6 || abs(dLon) > 1e-6) settled = false
+        } else if (tracking && !navigating) settled = false
         if (settled) glideRunning = false else Choreographer.getInstance().postFrameCallback(glide)
     }
 
@@ -695,6 +722,8 @@ class MapController(
         private const val CAMERA_SMOOTHING = 0.08f
         /** Po posledním dotyku mapy za navigace se kamera vrátí k jezdci po této době. */
         private const val FREE_LOOK_MS = 15_000L
+        /** Podíl zbývající vzdálenosti, o který střed mapy bez navigace dojede k jezdci za snímek. */
+        private const val TRACK_SMOOTHING = 0.2
         private const val MIN_ZOOM = 3.0
         private const val MAX_ZOOM = 20.0
     }

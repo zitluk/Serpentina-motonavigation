@@ -76,6 +76,10 @@
     <string name="recording_auto_start">Spustit záznam po rozjezdu (od 10 km/h)</string>
     <string name="recording_stop_after_nav">Zastavit záznam po ukončení navigace</string>
     <string name="recording_auto_started">Záznam jízdy spuštěn</string>
+    <string name="recording_ask_message">Jedeš bez navigace. Zaznamenat jízdu do Uložených jízd?</string>
+    <string name="recording_ask_yes">Zaznamenat jízdu</string>
+    <string name="recording_ask_no">Nezaznamenávat</string>
+    <string name="recording_ask_always">Vždy zaznamenávat po rozjezdu</string>
     <string name="recording_stop">Zastavit záznam</string>
     <string name="recording_saved">Jízda uložena: %1$s</string>
     <string name="round_trip">Projížďka po okolí</string>

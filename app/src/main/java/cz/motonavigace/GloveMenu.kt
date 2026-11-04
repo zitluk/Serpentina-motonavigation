@@ -31,7 +31,8 @@ object GloveMenu {
         }
     }
 
-    fun show(context: Context, title: String?, items: List<Item>) {
+    /** @return otevřená nabídka – volající ji může zavřít sám nebo sledovat její zavření */
+    fun show(context: Context, title: String?, items: List<Item>): BottomSheetDialog {
         val dialog = BottomSheetDialog(context)
         fun dp(v: Int) = (v * context.resources.displayMetrics.density).toInt()
         val primary = MaterialColors.getColor(context, androidx.appcompat.R.attr.colorPrimary, 0)
@@ -89,5 +90,6 @@ object GloveMenu {
         dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         dialog.behavior.skipCollapsed = true
         dialog.show()
+        return dialog
     }
 }

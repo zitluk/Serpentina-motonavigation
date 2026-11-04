@@ -45,6 +45,9 @@ class LeanActivity : AppCompatActivity(), LocationListener {
         setupEdgeToEdge(b.root)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Obrazovka se při měření neotáčí – při větším náklonu by se přetočila na šířku a s ní
+        // osy senzorů, takže by ručička spadla zpět k nule
+        requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
         // Maxima se měří vždy od otevření obrazovky; jízdy si je ukládají samy (Uložené jízdy)
         meter = LeanMeter(LeanSensors.calibration(this))
@@ -122,7 +125,7 @@ class LeanActivity : AppCompatActivity(), LocationListener {
     }
 
     override fun onLocationChanged(location: Location) {
-        if (location.hasSpeed()) meter.onSpeed(location.speed.toDouble(), location.elapsedRealtimeNanos)
+        if (location.hasSpeed()) meter.onSpeed(LeanMeter.gpsSpeed(location), location.elapsedRealtimeNanos)
     }
 
     @Suppress("DEPRECATION")

@@ -18,6 +18,8 @@ data class NavState(
     /** Vzdálenost k dalšímu manévru v metrech. */
     val toNext: Double,
     val offRoute: Boolean,
+    /** Jezdec je u trasy – ikonu jde přichytit na ni; jinak se ukazuje skutečná poloha z GPS. */
+    val nearRoute: Boolean,
     val arrived: Boolean,
     /** Směr trasy v místě jezdce (stupně od severu) – stabilnější než kurz z GPS. */
     val routeBearing: Float,
@@ -31,6 +33,8 @@ class Navigator(val route: Route, private val speak: (String) -> Unit) {
 
     private var segment = 0
     private var offRouteFixes = 0
+    /** Odpuštěná vzdálenost od začátku trasy (m), záporná = zatím neznámá; 0 po najetí na trasu. */
+    private var startSlack = -1.0
     /** Index manévru → už ohlášené fáze (0 = předběžně, 1 = teď). */
     private val announced = mutableMapOf<Int, MutableSet<Int>>()
     private var arrivedAnnounced = false
@@ -59,9 +63,17 @@ class Navigator(val route: Route, private val speak: (String) -> Unit) {
             pts[best].longitude + (pts[best + 1].longitude - pts[best].longitude) * bestT,
         )
 
-        val tolerance = max(40.0, accuracy * 1.5)
-        offRouteFixes = if (bestDist > tolerance) offRouteFixes + 1 else 0
-        val offRoute = offRouteFixes >= 3
+        // Jezdec, který úmyslně odbočí, má novou trasu dostat hned: stačí dvě polohy mimo trasu,
+        // nebo jedna, když je od ní už daleko
+        // Nová trasa začíná na nejbližší silnici – jezdec na parkovišti nebo mimo cestu je od ní
+        // hned na začátku dál; tuhle vzdálenost (s rezervou) odpustíme, dokud na trasu nenajede,
+        // jinak by se trasa přepočítávala pořád dokola
+        if (startSlack < 0) startSlack = bestDist + START_SLACK_METERS
+        val tolerance = max(OFF_ROUTE_METERS, accuracy * 1.5)
+        val nearRoute = bestDist <= tolerance
+        if (nearRoute) startSlack = 0.0
+        offRouteFixes = if (bestDist <= max(tolerance, startSlack)) 0 else offRouteFixes + 1
+        val offRoute = offRouteFixes >= OFF_ROUTE_FIXES || bestDist > maxOf(FAR_OFF_ROUTE_METERS, accuracy * 3.0, startSlack)
 
         val nextIdx = route.maneuvers.indexOfFirst { it.distance > along + 5 && it.command != "C" }
         val next = route.maneuvers.getOrNull(nextIdx)
@@ -74,7 +86,7 @@ class Navigator(val route: Route, private val speak: (String) -> Unit) {
         } else if (next != null && !offRoute) {
             announce(nextIdx, next, toNext, speedMps)
         }
-        return NavState(snapped, best, remaining, remainingTime, next, toNext, offRoute, arrived, bearingAhead(best))
+        return NavState(snapped, best, remaining, remainingTime, next, toNext, offRoute, nearRoute, arrived, bearingAhead(best))
     }
 
     private fun announce(idx: Int, m: Maneuver, toNext: Double, speedMps: Float) {
@@ -120,6 +132,15 @@ class Navigator(val route: Route, private val speak: (String) -> Unit) {
     }
 
     companion object {
+        /** Dál od trasy (m) už jezdec po trase nejede. */
+        private const val OFF_ROUTE_METERS = 35.0
+        /** Kolik poloh za sebou mimo trasu stačí na přepočet. */
+        private const val OFF_ROUTE_FIXES = 2
+        /** Takhle daleko od trasy (m) se přepočítá hned při první poloze. */
+        private const val FAR_OFF_ROUTE_METERS = 80.0
+        /** Rezerva k počáteční vzdálenosti od trasy (m), než se začne znovu přepočítávat. */
+        private const val START_SLACK_METERS = 30.0
+
         /** Pokyn v podobě „odbočte vpravo“ (malým písmenem, bez tečky). */
         fun instruction(m: Maneuver): String = if (Settings.isEnglish()) instructionEn(m) else when (m.command) {
             "TL" -> "odbočte vlevo"

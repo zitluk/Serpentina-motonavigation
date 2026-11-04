@@ -80,9 +80,13 @@ class LeanMeter(var calibration: Double = 0.0, var stats: LeanStats = LeanStats(
         val g = norm(gravity)
         // Rychlost otáčení kolem svislé osy motorky (kladně = doleva)
         val yaw = (x * gravity[0] + y * gravity[1] + z * gravity[2]) / g
-        val dynamic = Math.toDegrees(asin((-speed * yaw / G).coerceIn(-1.0, 1.0)))
-        // Mezi 2 a 4 m/s plynule přecházíme ze statického na dynamický výpočet
-        val w = ((speed - 2.0) / 2.0).coerceIn(0.0, 1.0)
+        // Bez čerstvé rychlosti z GPS (signál ztracený v budově, garáži) bereme, že motorka stojí –
+        // jinak by poslední rychlost z jízdy držela výpočet ze zatáčení a náklon telefonu by se neukázal
+        val v = if (timestampNs - lastSpeedNs > SPEED_STALE_NS) 0.0 else speed
+        val dynamic = Math.toDegrees(asin((-v * yaw / G).coerceIn(-1.0, 1.0)))
+        // Mezi 3 a 6 m/s (asi 11–22 km/h) plynule přecházíme ze statického na dynamický výpočet;
+        // pod tím je rychlost z GPS při stání jen šum
+        val w = ((v - 3.0) / 3.0).coerceIn(0.0, 1.0)
         filterLean(w * dynamic + (1 - w) * staticLean(), dt)
     }
 
@@ -145,6 +149,17 @@ class LeanMeter(var calibration: Double = 0.0, var stats: LeanStats = LeanStats(
         /** Víc už motorka na silnici nezvládne, vyšší hodnoty jsou chyba měření. */
         const val MAX_LEAN = 65.0
         const val MIN_RECORD_SPEED = 3.0
+        /** Rychlost z GPS starší než tohle (ns) už neplatí. */
+        private const val SPEED_STALE_NS = 5_000_000_000L
+
+        /**
+         * Rychlost z GPS pro měřák náklonu: když je menší než její vlastní nejistota (stání,
+         * odražený signál v budově), bereme nulu – telefon v ruce by jinak ukazoval „zatáčení“.
+         */
+        fun gpsSpeed(location: android.location.Location): Double {
+            val v = location.speed.toDouble()
+            return if (location.hasSpeedAccuracy() && v < 2 * location.speedAccuracyMetersPerSecond) 0.0 else v
+        }
 
         fun side(angle: Double) = if (abs(angle) < 0.5) "" else if (angle < 0) "L" else "P"
     }

@@ -104,19 +104,29 @@ assign unpavedpenalty  switch and isunpaved avoid_unpaved 3 0
 
 # Cena za metr podle třídy silnice a typu trasy.
 # Pořadí hodnot: nejkratší, ekonomická, více zatáček, maximum zatáček, nejrychlejší
+# Nejrychlejší: zhruba podle doby jízdy (dálnice 120, silnice 1. třídy 75, 2. třídy 65 km/h…).
+# Ekonomická: plynulá jízda po hlavních silnicích bez objížděk – dálnice jen o kousek dražší
+# (vyšší spotřeba), vedlejší silnice a průjezdy obcí dražší (časté brzdění a rozjezdy).
+# Na samotné dálnice se (bez volby Bez dálnic) nedívá jako na něco, čemu se má vyhnout.
 assign is_short  equal route_type 1
 assign is_eco    equal route_type 2
 assign is_curvy  equal route_type 3
 assign is_maxcur equal route_type 4
 
-assign c_motorway     switch is_short 1.0 switch is_eco 1.5  switch is_curvy 4.0 switch is_maxcur 8.0  1.0
-assign c_trunk        switch is_short 1.0 switch is_eco 1.25 switch is_curvy 2.5 switch is_maxcur 4.0  1.1
-assign c_primary      switch is_short 1.0 switch is_eco 1.05 switch is_curvy 1.6 switch is_maxcur 2.2  1.2
-assign c_secondary    switch is_short 1.0 switch is_eco 1.0  switch is_curvy 1.2 switch is_maxcur 1.3  1.4
-assign c_tertiary     switch is_short 1.0 switch is_eco 1.1  switch is_curvy 1.1 switch is_maxcur 1.0  1.6
-assign c_unclassified switch is_short 1.0 switch is_eco 1.3  switch is_curvy 1.2 switch is_maxcur 1.05 1.9
-assign c_residential  switch is_short 1.1 switch is_eco 1.6  switch is_curvy 2.5 switch is_maxcur 2.8  2.5
+assign c_motorway     switch is_short 1.0 switch is_eco 1.05 switch is_curvy 4.0 switch is_maxcur 8.0  1.0
+assign c_trunk        switch is_short 1.0 switch is_eco 1.05 switch is_curvy 2.5 switch is_maxcur 4.0  1.2
+assign c_primary      switch is_short 1.0 switch is_eco 1.05 switch is_curvy 1.6 switch is_maxcur 2.2  1.45
+assign c_secondary    switch is_short 1.0 switch is_eco 1.1  switch is_curvy 1.2 switch is_maxcur 1.3  1.65
+assign c_tertiary     switch is_short 1.0 switch is_eco 1.2  switch is_curvy 1.1 switch is_maxcur 1.0  1.9
+assign c_unclassified switch is_short 1.0 switch is_eco 1.35 switch is_curvy 1.2 switch is_maxcur 1.05 2.3
+assign c_residential  switch is_short 1.1 switch is_eco 1.8  switch is_curvy 2.5 switch is_maxcur 2.8  3.0
 assign c_service      switch is_short 1.5 switch is_eco 3.0  switch is_curvy 4.0 switch is_maxcur 4.0  4.0
+
+# Průjezd obcí (limit 50 km/h a nižší) – pomalejší a s brzděním, mimo nejkratší trasu dražší
+assign isslow     maxspeed=50|40|30|20
+assign slowpenalty switch isslow
+                   switch is_short 0 switch is_eco 0.3 switch is_curvy 0.4 switch is_maxcur 0.3 0.6
+                   0
 
 assign costfactor
 
@@ -125,6 +135,8 @@ assign costfactor
  add switch isdestination 10 0
 
  add unpavedpenalty
+
+ add slowpenalty
 
  add switch islinktype 0.05 0
 

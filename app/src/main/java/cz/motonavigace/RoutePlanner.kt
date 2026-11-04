@@ -78,6 +78,10 @@ object RoutePlanner {
     private const val MAX_RUNNING_MS = 60_000L
     /** Styl pokynů OsmAnd – jakýkoli pevný styl; 1 (auto) by pokyny vůbec negeneroval. */
     private const val TURN_INSTRUCTION_MODE = 3
+    /** Okruh kolem místa sjetí z trasy, kterým nová trasa nemá vést zpátky (m). */
+    private const val AVOID_RADIUS_METERS = 30.0
+    /** Cena průjezdu tím okruhem – jen pokud jiná cesta není (slepá ulice), jinak se mu vyhne. */
+    private const val AVOID_WEIGHT = 2000.0
 
     /** Segmenty, které musí být stažené, aby šlo trasu spočítat (aspoň pro všechny body trasy). */
     fun missingSegments(waypoints: List<LatLong>): List<String> = waypoints
@@ -88,6 +92,8 @@ object RoutePlanner {
     /**
      * @param looseWaypoints průjezdní body nemusí ležet u silnice (vygenerovaný okruh) –
      *   BRouter pak hledá nejbližší cestu i ve větší vzdálenosti.
+     * @param avoidPoint místo, kde jezdec z trasy úmyslně sjel – nová trasa ho zpátky přes ně
+     *   nevede, pokud to jde jinak (měkká zakázaná oblast BRouteru)
      */
     /**
      * Až [max] různých tras mezi stejnými body (BRouter alternativeIdx 0, 1, 2…).
@@ -112,7 +118,7 @@ object RoutePlanner {
 
     suspend fun calculate(
         waypoints: List<LatLong>, options: RouteOptions,
-        looseWaypoints: Boolean = false, alternative: Int = 0,
+        looseWaypoints: Boolean = false, alternative: Int = 0, avoidPoint: LatLong? = null,
     ): Route =
         withContext(Dispatchers.Default) {
             require(waypoints.size >= 2) { "Trasa potřebuje start a cíl" }
@@ -134,6 +140,17 @@ object RoutePlanner {
                 turnInstructionMode = TURN_INSTRUCTION_MODE
                 useDynamicDistance = looseWaypoints
                 alternativeIdx = alternative
+                avoidPoint?.let {
+                    val nogo = OsmNodeNamed().apply {
+                        name = "back"
+                        isNogo = true
+                        radius = AVOID_RADIUS_METERS
+                        nogoWeight = AVOID_WEIGHT
+                        ilon = ((it.longitude + 180.0) * 1_000_000 + 0.5).toInt()
+                        ilat = ((it.latitude + 90.0) * 1_000_000 + 0.5).toInt()
+                    }
+                    nogopoints = mutableListOf(nogo).also(RoutingContext::prepareNogoPoints)
+                }
             }
             val nodes = waypoints.mapIndexed { i, p ->
                 OsmNodeNamed().apply {

@@ -195,7 +195,7 @@ class RecordingService : Service(), LocationListener {
     override fun onLocationChanged(location: Location) {
         // Rychlost pro výpočet náklonu a zrychlení i z méně přesných poloh
         leanMeter?.let { m ->
-            if (location.hasSpeed()) m.onSpeed(location.speed.toDouble(), location.elapsedRealtimeNanos)
+            if (location.hasSpeed()) m.onSpeed(LeanMeter.gpsSpeed(location), location.elapsedRealtimeNanos)
             if (++fixesSinceLeanSave >= LEAN_SAVE_EVERY) { fixesSinceLeanSave = 0; saveLean() }
         }
         if (location.hasAccuracy() && location.accuracy > MAX_ACCURACY_M) return

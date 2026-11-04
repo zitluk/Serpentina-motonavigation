@@ -676,6 +676,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if (waitingForFix && isFresh(location)) {
             if (location.accuracy <= PRECISE_ACCURACY) centerOnFix(location)
             else b.gpsChip.text = getString(R.string.waiting_for_precise_location_accuracy, location.accuracy.roundToInt())
+        } else if (!mapCtl.tracking && location.hasSpeed() && location.speed * 3.6f >= Recording.AUTO_START_KMH &&
+            mapCtl.sinceUserMoveMs > TRACK_RESUME_MS && b.routePanel.visibility != View.VISIBLE &&
+            location.accuracy <= PRECISE_ACCURACY
+        ) {
+            // Za jízdy se mapa po chvíli bez dotyku sama vrátí k jezdci a dál ho sleduje
+            centerOnFix(location)
         }
         // Rozhodujeme až podle dost přesné polohy změřené po spuštění
         // Dotaz na motorku až po úvodním logu, jinak by se ukázal přes něj
@@ -712,6 +718,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         cancelWaitingForFix()
         if (b.routePanel.visibility != View.VISIBLE) mapCtl.resetViewCenter()
         mapCtl.moveTo(LatLong(location.latitude, location.longitude), zoom = if (mapCtl.zoomLevel < 12) 14 else null)
+        // Dál mapa drží polohu uprostřed, dokud s ní jezdec sám nepohne
+        mapCtl.startTracking()
     }
 
     // ---------------------------------------------------------------- zaparkovaná motorka
@@ -1181,21 +1189,55 @@ class MainActivity : AppCompatActivity(), LocationListener {
     /** Automatika se po zastavení záznamu znovu chystá až po zastavení motorky (ne hned po ručním stopu). */
     private var autoStartArmed = true
 
-    /** Automatický start záznamu po rozjezdu a znovu-nachystání po zastavení motorky. */
+    /** Na záznam jízdy bez navigace se ptáme jen jednou za spuštění aplikace – po „Ne“ už ne. */
+    private var askRecordingAllowed = true
+    private var askRecordingDialog: android.app.Dialog? = null
+
+    /**
+     * Automatický start záznamu po rozjezdu a znovu-nachystání po zastavení motorky. Bez automatiky
+     * se při jízdě bez navigace zeptáme, jestli jízdu zaznamenat.
+     */
     private fun autoRecording(location: Location) {
-        if (!Settings.autoStartRecording || !location.hasSpeed()) return
+        if (!location.hasSpeed()) return
         val kmh = location.speed * 3.6f
         if (Recording.state.value.active) {
             autoStartArmed = false
+            askRecordingDialog?.dismiss()
             return
         }
         if (kmh < Recording.AUTO_REARM_KMH) autoStartArmed = true
-        if (autoStartArmed && kmh >= Recording.AUTO_START_KMH &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        ) {
+        if (kmh < Recording.AUTO_START_KMH ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) return
+        if (Settings.autoStartRecording) {
+            if (!autoStartArmed) return
             autoStartArmed = false
             startRecording()
             Toast.makeText(this, R.string.recording_auto_started, Toast.LENGTH_SHORT).show()
+        } else if (navigator == null && askRecordingAllowed && askRecordingDialog == null &&
+            // Ne přes úvodní logo – zeptáme se až s viditelnou mapou
+            b.startLogo.visibility != View.VISIBLE &&
+            lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        ) {
+            askRecording()
+        }
+    }
+
+    /** Jedeme bez navigace a bez záznamu – nabídneme spuštění záznamu, případně i automatiku. */
+    private fun askRecording() {
+        // Za jízdy v rukavicích: velké položky přes celou šířku, ne malá tlačítka dialogu
+        askRecordingDialog = GloveMenu.show(this, getString(R.string.recording_ask_message), listOf(
+            GloveMenu.Item(getString(R.string.recording_ask_yes)) { requestRecording() },
+            GloveMenu.Item(getString(R.string.recording_ask_always)) {
+                Settings.autoStartRecording = true
+                autoStartArmed = false
+                requestRecording()
+            },
+            GloveMenu.Item(getString(R.string.recording_ask_no)) { askRecordingAllowed = false },
+        )).apply {
+            // Zavření stažením dolů nebo ťuknutím vedle bereme jako „Ne“ – jinak by se s další polohou ptal znovu
+            setOnCancelListener { askRecordingAllowed = false }
+            setOnDismissListener { askRecordingDialog = null }
         }
     }
 
@@ -1291,6 +1333,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         clearRoute()
         setNavigationUi(false)
         mapCtl.stopFollowing(lastLocation?.let { LatLong(it.latitude, it.longitude) })
+        // Po navigaci mapa dál sleduje jezdce
+        if (lastLocation != null) mapCtl.startTracking()
         // Záznam jízdy skončí s navigací, pokud si to jezdec zaškrtl (uloží se do Tras a jízd)
         if (Settings.stopRecordingAfterNavigation && Recording.state.value.active) Recording.stop(this)
         finishRide()?.let(::offerRideSummary)
@@ -1312,7 +1356,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun onRideFix(location: Location, pos: LatLong) {
         val meter = rideMeter ?: return
-        if (location.hasSpeed()) meter.onSpeed(location.speed.toDouble(), location.elapsedRealtimeNanos)
+        if (location.hasSpeed()) meter.onSpeed(LeanMeter.gpsSpeed(location), location.elapsedRealtimeNanos)
         rideTracker?.onFix(pos, location.accuracy, location.speed, location.time)
     }
 
@@ -1396,17 +1440,19 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         // Mapa sleduje jezdce; natočení a naklonění podle režimu zobrazení.
         // Na trase podle směru silnice, mimo ni podle kurzu z GPS (jen v pohybu, jinak je nespolehlivý).
-        val heading = if (!state.offRoute) state.routeBearing
-            else location.bearing.takeIf { location.hasBearing() && location.speed > 1.5f }
+        val gpsHeading = location.bearing.takeIf { location.hasBearing() && location.speed > 1.5f }
+        // Kousek od trasy (jezdec odbočil) už ikonu ani mapu po staré trase netáhneme
+        val onRoute = state.nearRoute && !state.offRoute
+        val heading = if (onRoute) state.routeBearing else gpsHeading
         // Ikona k další poloze z GPS plynule dojíždí, takže by o sekundu zaostávala – míří proto
         // na místo, kam jezdec po trase za tu dobu dojede (poloha z GPS je navíc o chvilku stará)
         val r = nav.route
         val along = r.distances[state.segment] + r.points[state.segment].sphericalDistance(state.snapped)
         val ahead = (location.speed * PREDICT_SECONDS).toDouble().coerceIn(0.0, PREDICT_MAX_METERS)
         val shown = r.pointAt(along + ahead)
-        mapCtl.follow(shown.takeUnless { state.offRoute } ?: pos, heading, location.speed)
+        mapCtl.follow(shown.takeIf { onRoute } ?: pos, heading, location.speed)
         // Trasa před jezdcem tmavě a široce, za ním světle a úzce – mimo trasu dělení nedává smysl
-        if (!state.offRoute) mapCtl.showProgress(r.points, segmentAt(r, along + ahead), shown)
+        if (onRoute) mapCtl.showProgress(r.points, segmentAt(r, along + ahead), shown)
 
         showLanes(state.next?.takeIf { state.toNext < LANES_DISTANCE && !state.offRoute })
         showManeuverArrow(state.next)
@@ -1427,7 +1473,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
             state.offRoute && !recalculating -> {
                 b.navInstruction.setText(R.string.recalculating)
                 speak(getString(R.string.recalculating).removeSuffix("…"))
-                recalculateFrom(pos, passedSegment = state.segment)
+                // Jezdec odbočil úmyslně – nová trasa ho nemá vracet na místo, kde z trasy sjel
+                recalculateFrom(pos, passedSegment = state.segment, avoid = state.snapped)
             }
         }
     }
@@ -1528,7 +1575,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     /** Nová trasa z [here] přes dosud neprojeté průjezdní body do cíle. */
-    private fun recalculateFrom(here: LatLong, passedSegment: Int = -1) {
+    private fun recalculateFrom(here: LatLong, passedSegment: Int = -1, avoid: LatLong? = null) {
         val e = end ?: return
         val old = route
         if (old != null && passedSegment >= 0) {
@@ -1540,7 +1587,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
         routeJob?.cancel()
         routeJob = lifecycleScope.launch {
             try {
-                val r = RoutePlanner.calculate(listOf(here) + vias + e, options(), looseWaypoints = roundTripKm != null)
+                val r = RoutePlanner.calculate(
+                    listOf(here) + vias + e, options(), looseWaypoints = roundTripKm != null, avoidPoint = avoid,
+                )
                 showRoute(r)
                 b.routeStatus.text = formatSummary(r)
                 refreshPins()
@@ -1599,5 +1648,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         const val MIN_RIDE_SUMMARY_METERS = 300.0
         /** Jak dlouho nejvýš čekat na přesnou polohu, než se vezme nejlepší dostupná. */
         const val PRECISE_TIMEOUT_MS = 20_000L
+        /** Za jízdy bez navigace se mapa vrátí k jezdci po této době od posledního dotyku. */
+        const val TRACK_RESUME_MS = 15_000L
     }
 }

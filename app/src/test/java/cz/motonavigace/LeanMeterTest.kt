@@ -59,6 +59,21 @@ class LeanMeterTest {
     }
 
     @Test
+    fun staleSpeedFallsBackToTilt() {
+        val m = LeanMeter()
+        // Poslední rychlost z jízdy, pak signál zmizel (garáž) a jezdec telefon nakloní rukou
+        m.onSpeed(15.0, 1_000_000_000L)
+        val tilt = Math.toRadians(30.0)
+        var t = 10_000_000_000L
+        repeat(200) {
+            m.onGravity((-LeanMeter.G * sin(tilt)).toFloat(), (LeanMeter.G * cos(tilt)).toFloat(), 0f)
+            m.onGyro(0f, 0f, 0f, t)
+            t += 20_000_000L
+        }
+        assertEquals(30.0, m.lean, 0.5)
+    }
+
+    @Test
     fun accelerationAndBrakingFromSpeed() {
         val m = LeanMeter()
         var t = 0L
