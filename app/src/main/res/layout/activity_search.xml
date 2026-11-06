@@ -24,6 +24,25 @@
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Rychlá tlačítka, zpráva a nadpis historie odjedou nahoru spolu se seznamem; pole hledání zůstává -->
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:elevation="0dp"
+        app:liftOnScroll="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_scrollFlags="scroll">
+
     <!-- Rychlé hledání nejbližších míst podle druhu: stejně široká velká tlačítka do rukavic -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -99,9 +118,13 @@
             android:minHeight="64dp"
             android:text="@string/history_clear" />
     </LinearLayout>
+    </LinearLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/results"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </LinearLayout>

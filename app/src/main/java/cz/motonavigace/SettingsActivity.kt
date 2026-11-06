@@ -23,7 +23,7 @@ import cz.motonavigace.databinding.ActivitySettingsBinding
 import cz.motonavigace.databinding.DialogFeedbackBinding
 import kotlinx.coroutines.launch
 
-/** Nastavení: vzhled, typ motocyklu, jazyk, informace o aplikaci, zpětná vazba a příspěvek na vývoj. */
+/** Nastavení: vzhled, typ cest, jazyk, informace o aplikaci, zpětná vazba a příspěvek na vývoj. */
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var b: ActivitySettingsBinding
@@ -49,7 +49,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
         b.manufacturer.title.setText(R.string.settings_manufacturer)
-        b.bike.title.setText(R.string.settings_bike_type)
+        b.roadType.title.setText(R.string.settings_road_type)
         b.language.title.setText(R.string.settings_language_app)
         b.voice.title.setText(R.string.settings_voice)
         b.voice.summary.setText(R.string.voice_loading)
@@ -113,9 +113,9 @@ class SettingsActivity : AppCompatActivity() {
                 refresh()
             }
         }
-        b.bike.root.setOnClickListener {
-            choose(R.string.settings_bike_type, BikeType.entries.map { getString(it.label) }, Settings.bike.ordinal) {
-                Settings.bike = BikeType.entries[it]
+        b.roadType.root.setOnClickListener {
+            choose(R.string.settings_road_type, RoadType.entries.map { getString(it.label) }, Settings.roadType.ordinal) {
+                Settings.roadType = RoadType.entries[it]
                 refresh()
             }
         }
@@ -238,8 +238,8 @@ class SettingsActivity : AppCompatActivity() {
         b.manufacturer.summary.text = Settings.manufacturer.ifEmpty { getString(R.string.manufacturer_none) }
         b.theme.summary.setText(Settings.theme.label)
         b.nightMap.summary.setText(Settings.nightMap.label)
-        val bike = Settings.bike
-        b.bike.summary.text = getString(bike.label) + "\n" + getString(bike.description)
+        val road = Settings.roadType
+        b.roadType.summary.text = getString(road.label) + "\n" + getString(road.description)
         b.language.summary.setText(Settings.language.label)
         b.showPoi.summary.text = poiSummary()
         b.mobileData.summary.setText(if (Settings.mobileData) R.string.mobile_data_on_summary else R.string.mobile_data_off_summary)

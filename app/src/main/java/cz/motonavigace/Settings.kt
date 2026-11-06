@@ -56,10 +56,11 @@ enum class AppLanguage(val id: Int, @StringRes val label: Int, val tag: String) 
 }
 
 /**
- * Typ motocyklu určuje výchozí volby trasy a odhad cestovní rychlosti.
+ * Typ cest, po kterých jezdec nejčastěji jezdí – určuje výchozí volby trasy a odhad cestovní rychlosti.
+ * Id odpovídají dřívějším typům motocyklu, uložené nastavení tak zůstane (dřívější naked = id 2 → [CURVY]).
  * @param maxKmh nejvyšší rychlost, se kterou počítá odhad času jízdy
  */
-enum class BikeType(
+enum class RoadType(
     val id: Int,
     @StringRes val label: Int,
     @StringRes val description: Int,
@@ -68,12 +69,19 @@ enum class BikeType(
     val avoidUnpaved: Boolean,
     val maxKmh: Double,
 ) {
-    SPORT(0, R.string.bike_sport, R.string.bike_sport_desc, RouteType.CURVY, false, true, 130.0),
-    TOURING(1, R.string.bike_touring, R.string.bike_touring_desc, RouteType.FASTEST, false, true, 130.0),
-    NAKED(2, R.string.bike_naked, R.string.bike_naked_desc, RouteType.CURVY, false, true, 120.0),
-    ADVENTURE(3, R.string.bike_adventure, R.string.bike_adventure_desc, RouteType.CURVY, false, false, 120.0),
-    CRUISER(4, R.string.bike_cruiser, R.string.bike_cruiser_desc, RouteType.ECO, false, true, 110.0),
-    SCOOTER(5, R.string.bike_scooter, R.string.bike_scooter_desc, RouteType.SHORTEST, true, true, 90.0),
+    CURVY(0, R.string.road_curvy, R.string.road_curvy_desc, RouteType.CURVY, false, true, 130.0),
+    LONG(1, R.string.road_long, R.string.road_long_desc, RouteType.FASTEST, false, true, 130.0),
+    GRAVEL(3, R.string.road_gravel, R.string.road_gravel_desc, RouteType.CURVY, false, false, 120.0),
+    RELAXED(4, R.string.road_relaxed, R.string.road_relaxed_desc, RouteType.ECO, false, true, 110.0),
+    LOCAL(5, R.string.road_local, R.string.road_local_desc, RouteType.SHORTEST, true, true, 90.0),
+    ;
+
+    companion object {
+        private const val OLD_NAKED = 2
+
+        fun byId(id: Int): RoadType =
+            if (id == OLD_NAKED) CURVY else entries.firstOrNull { it.id == id } ?: LONG
+    }
 }
 
 class Manufacturer(val name: String, val launcherAlias: String, @StyleRes val splashTheme: Int)
@@ -125,8 +133,8 @@ object Settings {
         get() = NightMap.entries.firstOrNull { it.id == prefs.getInt("night_map", NightMap.AUTO.id) } ?: NightMap.AUTO
         set(value) = prefs.edit { putInt("night_map", value.id) }
 
-    var bike: BikeType
-        get() = BikeType.entries.firstOrNull { it.id == prefs.getInt("bike", BikeType.TOURING.id) } ?: BikeType.TOURING
+    var roadType: RoadType
+        get() = RoadType.byId(prefs.getInt("bike", RoadType.LONG.id))
         set(value) = prefs.edit { putInt("bike", value.id) }
 
     var markerShape: MarkerShape

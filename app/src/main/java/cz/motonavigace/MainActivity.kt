@@ -288,7 +288,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         showRadarsOnMap()
         Downloads.refresh(this)
         reloadMapsIfChanged()
-        applyBikeDefaults()
+        applyRoadTypeDefaults()
         TrackLibrary.lastRecorded?.let {
             TrackLibrary.lastRecorded = null
             Toast.makeText(this, getString(R.string.recording_saved, it.nameWithoutExtension), Toast.LENGTH_LONG).show()
@@ -804,17 +804,21 @@ class MainActivity : AppCompatActivity(), LocationListener {
         }
     }
 
-    /** Po změně typu motocyklu v nastavení přednastaví typ trasy a vyhýbání. */
-    private fun applyBikeDefaults() {
-        val bike = Settings.bike
+    /** Po změně typu cest v nastavení přednastaví typ trasy a vyhýbání. */
+    private fun applyRoadTypeDefaults() {
+        val road = Settings.roadType
         val applied = prefs.getInt("bike_applied", -1)
-        if (applied == bike.id) return
-        prefs.edit { putInt("bike_applied", bike.id) }
+        // Dřívější naked (id 2) je teď stejný typ cest jako sportovní – volby se nepřepisují
+        if (applied == road.id || RoadType.byId(applied) == road) {
+            if (applied != road.id) prefs.edit { putInt("bike_applied", road.id) }
+            return
+        }
+        prefs.edit { putInt("bike_applied", road.id) }
         // Při prvním spuštění necháme volby, které si jezdec už nastavil
         if (applied == -1) return
-        selectRouteType(bike.routeType)
-        b.chipMotorways.isChecked = bike.avoidMotorways
-        b.chipUnpaved.isChecked = bike.avoidUnpaved
+        selectRouteType(road.routeType)
+        b.chipMotorways.isChecked = road.avoidMotorways
+        b.chipUnpaved.isChecked = road.avoidUnpaved
     }
 
     private fun selectedRouteType(): RouteType =

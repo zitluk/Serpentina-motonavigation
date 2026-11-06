@@ -216,7 +216,7 @@ object RoutePlanner {
         }
         val limit = tags["maxspeed"]?.toDoubleOrNull()
         val speed = if (limit != null && limit > 0) min(typical, limit) else typical
-        return min(speed, Settings.bike.maxKmh)
+        return min(speed, Settings.roadType.maxKmh)
     }
 
     private fun floor5(v: Double) = (floor(v / 5) * 5).toInt()
