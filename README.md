@@ -32,8 +32,8 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - **Offline mapy** ve 3D (nakloněná, po směru jízdy), 2D po směru jízdy nebo se severem nahoře; bez rušivých vrstev (parkoviště, obchody, MHD…), s 3D budovami. Mapa drží tvoji polohu uprostřed i bez navigace; když ji posuneš prstem, za jízdy se k tobě po chvíli vrátí sama
 - **Noční mapa** v tmavých barvách – automaticky po západu slunce, podle vzhledu aplikace, vždy nebo nikdy
 - **Trasy** bez internetu: Nejrychlejší / Nejkratší / Ekonomická (plynule po hlavních silnicích a dálnicích, bez zbytečných průjezdů obcemi) / Více zatáček / Maximum zatáček, volby bez dálnic / bez šotoliny / bez trajektů, ke každému cíli až 3 varianty s délkou a časem
-- **Navigace** s hlasovými pokyny česky i anglicky, okamžitým přepočtem, když úmyslně změníš cestu (nová trasa tě nevrací zpátky), a doporučením jízdního pruhu před manévrem na vícepruhové silnici; během navigace rychlost podle GPS, zoom podle rychlosti, prohlížení celé trasy gestem (zpět k motorce tlačítkem polohy) a upozornění na radary (hlasem i štítkem s povolenou rychlostí, červeně při překročení)
-- **Vyhledávání cíle** – obce, místa, body zájmu i souřadnice, s diakritikou i bez ní; stejnojmenné obce rozlišené okresem. Rychlé volby **Čerpací stanice**, **Parkoviště** a **Občerstvení** najdou nejbližší místa
+- **Navigace** s hlasovými pokyny česky i anglicky, okamžitým přepočtem, když úmyslně změníš cestu (nová trasa tě nevrací zpátky), a doporučením jízdního pruhu před manévrem na vícepruhové silnici; během navigace rychlost podle GPS, zoom podle rychlosti, prohlížení celé trasy gestem (zpět k motorce tlačítkem polohy) a upozornění na radary, které jdou v bodech zájmu vypnout (hlasem i štítkem s povolenou rychlostí, červeně při překročení)
+- **Vyhledávání cíle** – obce, místa, body zájmu i souřadnice, s diakritikou i bez ní; stejnojmenné obce rozlišené okresem. Rychlé volby **Čerpací stanice**, **Parkoviště** a **Občerstvení** najdou nejbližší místa. Dokud nic nepíšeš, ukazuje **nedávné cíle** navigace – podržením jeden odebereš, tlačítkem Smazat historii všechny
 - **Projížďka po okolí** – okruh zvolené délky (20–300 km) z aktuální polohy, „Jiný okruh“ vylosuje jiný směr
 - **Poloha motorky** – po ukončení navigace si aplikace pamatuje, kde motorka stojí; při dalším spuštění dál než 20 m od ní nabídne navigaci k motorce (na mapě se pak ukazuje chodec)
 - **Záznam jízdy** do GPX (i se zhasnutou obrazovkou) se statistikami: vzdálenost, čas, průměrná a max. rychlost, stoupání. Když se rozjedeš bez navigace, aplikace se velkou nabídkou zeptá, jestli jízdu zaznamenat (nebo zaznamenávat vždy po rozjezdu)
@@ -42,7 +42,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - **Ovládání v rukavicích** – velká tlačítka v celé aplikaci, menu a volby přes celou šířku displeje
 - **Ikona polohy** – šipka nebo silueta motocyklu (sportovní, cestovní, naked, enduro, chopper, skútr) v 8 barvách, natočená po směru jízdy
 - **Výrobce motocyklu** změní ikonu aplikace i úvodní logo přes celou šířku displeje; typ motocyklu přednastaví typ trasy, šotolinu, dálnice a odhad času
-- **Nastavení** – světlý / tmavý vzhled, jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), výběr hlasu navigace s ukázkou (nebo bez hlasu), vypnutí mobilních dat (stahování, kontrola aktualizací a zpětná vazba jen přes Wi-Fi), výběr bodů zájmu na mapě (pumpy, vyhlídky, průsmyky, ubytování, parkoviště, restaurace…)
+- **Nastavení** – světlý / tmavý vzhled, jazyk aplikace i hlasové navigace (čeština / angličtina / podle systému), výběr hlasu navigace s ukázkou (nebo bez hlasu), vypnutí mobilních dat (stahování, kontrola aktualizací a zpětná vazba jen přes Wi-Fi), výběr bodů zájmu na mapě (pumpy, radary, vyhlídky, průsmyky, ubytování, parkoviště, restaurace…; zapnuté nahoře seznamu)
 - **Zpětná vazba** vývojáři přímo z aplikace a možnost drobné podpory přes QR Platbu
 - **Sdílení aplikace** – QR kód s odkazem ke stažení v Nastavení, nebo odeslání odkazu zprávou
 
@@ -53,7 +53,7 @@ Odkaz otevři v telefonu, stažený soubor spusť a povol instalaci z prohlíže
 - Panel trasy dole: délka, čas, varianty, typ trasy, vyhýbání, **Navigovat**
 - Tlačítko **3D / 2D / N** vpravo nahoře přepíná zobrazení mapy, tlačítko polohy vycentruje mapu na tvoji polohu. Dokud GPS nezná přesnou polohu, ukazuje se „Prosím počkejte na přesnou polohu“
 - Menu ☰ → **Projížďka po okolí** → zvol délku → Vytvořit; Obrátit pojede okruh opačně
-- Menu ☰ → **Záznam jízdy** → **Spustit záznam manuálně** (červený štítek REC na mapě, ťuknutím záznam zastavíš) a zaškrtávací volby **Spustit záznam po rozjezdu (od 10 km/h)** a **Zastavit záznam po ukončení navigace**
+- Menu ☰ → **Záznam jízdy** → **Spustit záznam manuálně** (červený štítek REC na mapě, ťuknutím záznam zastavíš) a zaškrtávací volby **Spustit záznam po rozjezdu (od 10 km/h)**, **Zeptat se po zahájení jízdy** a **Zastavit záznam po ukončení navigace**
 - Během navigace mapu posuneš nebo oddálíš gestem a prohlédneš si celou trasu; tlačítko polohy (nebo 15 s bez dotyku) vrátí mapu za motorku. Tlačítka + / − přibližují až na detail ulic
 - Menu ☰ → **Uložené jízdy** – seznam jízd podle data a času; ťuknutím detail jízdy s náklonem, vzdáleností, časy, rychlostmi, zrychlením a stoupáním → Sdílet jako obrázek / Zobrazit na mapě / Navigovat po trase / Sdílet GPX / Smazat
 - Navigace po GPX naplánuje trasu po silnicích přes body vybrané ze stopy, takže má pokyny i přepočet

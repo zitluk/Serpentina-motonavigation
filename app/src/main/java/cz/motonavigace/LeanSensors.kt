@@ -40,12 +40,12 @@ class LeanSensors(context: Context, private val meter: LeanMeter, private val ro
         val (x, y) = toScreenAxes(event.values[0], event.values[1])
         val z = event.values[2]
         when (event.sensor.type) {
-            Sensor.TYPE_GRAVITY -> meter.onGravity(x, y, z)
+            Sensor.TYPE_GRAVITY -> meter.onGravity(x, y, z, event.timestamp)
             Sensor.TYPE_ACCELEROMETER -> {
                 lowPass[0] += (x - lowPass[0]) * 0.1f
                 lowPass[1] += (y - lowPass[1]) * 0.1f
                 lowPass[2] += (z - lowPass[2]) * 0.1f
-                meter.onGravity(lowPass[0], lowPass[1], lowPass[2])
+                meter.onGravity(lowPass[0], lowPass[1], lowPass[2], event.timestamp)
             }
             Sensor.TYPE_GYROSCOPE -> meter.onGyro(x, y, z, event.timestamp)
         }

@@ -59,6 +59,40 @@ class LeanMeterTest {
     }
 
     @Test
+    fun withoutGyroLeanComesFromGpsCourse() {
+        val m = LeanMeter()
+        // Telefon bez gyroskopu: tíže podél osy motorky, zatáčka doprava 20 m/s, poloměr 50 m
+        val speed = 20.0
+        val radius = 50.0
+        var t = 1_000_000_000L
+        var course = 0.0
+        repeat(10) {
+            m.onGravity(0f, LeanMeter.G.toFloat(), 0f, t)
+            m.onSpeed(speed, t)
+            m.onCourse(course, t)
+            course += Math.toDegrees(speed / radius)
+            t += 1_000_000_000L
+        }
+        assertEquals(39.2, m.lean, 1.0)
+    }
+
+    @Test
+    fun handlebarJitterIsSmoothedOut() {
+        val m = LeanMeter()
+        m.onSpeed(20.0, 1_000_000_000L)
+        var t = 1_000_000_000L
+        var maxAbs = 0.0
+        // Rovně, ale řídítka a vibrace střídavě točí telefonem o ±0,3 rad/s
+        repeat(300) { i ->
+            m.onGravity(0f, LeanMeter.G.toFloat(), 0f, t)
+            m.onGyro(0f, (if (i % 10 < 5) 0.3f else -0.3f), 0f, t)
+            t += 20_000_000L
+            if (i > 50) maxAbs = maxOf(maxAbs, kotlin.math.abs(m.lean))
+        }
+        assertTrue("náklon na rovince poskakuje o $maxAbs°", maxAbs < 5.0)
+    }
+
+    @Test
     fun staleSpeedFallsBackToTilt() {
         val m = LeanMeter()
         // Poslední rychlost z jízdy, pak signál zmizel (garáž) a jezdec telefon nakloní rukou

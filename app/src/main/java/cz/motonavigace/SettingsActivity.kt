@@ -150,7 +150,10 @@ class SettingsActivity : AppCompatActivity() {
 
     /** Seznam druhů bodů zájmu k zaškrtnutí; každá změna se uloží hned, nabídka zůstane otevřená. */
     private fun choosePoi() {
-        GloveMenu.show(this, getString(R.string.settings_poi), MapPoi.entries.map { poi ->
+        // Zapnuté druhy nahoře, pod nimi vypnuté – obojí v pořadí seznamu
+        val shown = Settings.poiLayers
+        val ordered = MapPoi.entries.sortedBy { it.layer !in shown }
+        GloveMenu.show(this, getString(R.string.settings_poi), ordered.map { poi ->
             GloveMenu.Item.checkbox(getString(poi.label), poi.layer in Settings.poiLayers) { on ->
                 Settings.poiLayers = if (on) Settings.poiLayers + poi.layer else Settings.poiLayers - poi.layer
                 refresh()

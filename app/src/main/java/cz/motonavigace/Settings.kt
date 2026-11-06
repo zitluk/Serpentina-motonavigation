@@ -31,6 +31,8 @@ enum class NightMap(val id: Int, @StringRes val label: Int) {
  */
 enum class MapPoi(val layer: String, @StringRes val label: Int, val default: Boolean) {
     FUEL("fuel", R.string.poi_fuel, true),
+    /** Radary nejsou vrstva stylu mapy – aplikace je kreslí sama a hlásí za navigace. */
+    RADAR("speed_camera", R.string.poi_radar, true),
     VIEW("view", R.string.poi_view, true),
     MOUNTAIN_PASS("mountain_pass", R.string.poi_mountain_pass, true),
     MOUNTAIN_PEAK("mountain_peak", R.string.poi_mountain_peak, true),
@@ -93,9 +95,21 @@ object Settings {
         }
 
     /** Záznam jízdy se spustí sám, jakmile motorka jede aspoň [Recording.AUTO_START_KMH]. */
+    /** Automatický start a dotaz na záznam se vylučují – zapnutí jednoho vypne druhé. */
     var autoStartRecording: Boolean
         get() = prefs.getBoolean("auto_start_recording", false)
-        set(value) = prefs.edit { putBoolean("auto_start_recording", value) }
+        set(value) = prefs.edit {
+            putBoolean("auto_start_recording", value)
+            if (value) putBoolean("ask_to_record", false)
+        }
+
+    /** Při jízdě bez navigace a bez automatického záznamu se zeptat, jestli jízdu zaznamenat. */
+    var askToRecord: Boolean
+        get() = !autoStartRecording && prefs.getBoolean("ask_to_record", true)
+        set(value) = prefs.edit {
+            putBoolean("ask_to_record", value)
+            if (value) putBoolean("auto_start_recording", false)
+        }
 
     /** Po ukončení navigace se záznam jízdy zastaví a uloží. */
     var stopRecordingAfterNavigation: Boolean
@@ -125,8 +139,21 @@ object Settings {
 
     /** Druhy bodů zájmu, jejichž ikony mapa ukazuje (vrstvy stylu MOTORIDER). */
     var poiLayers: Set<String>
-        get() = prefs.getStringSet("poi_layers", null)?.toSet() ?: MapPoi.entries.filter { it.default }.map { it.layer }.toSet()
-        set(value) = prefs.edit { putStringSet("poi_layers", value) }
+        get() {
+            val stored = prefs.getStringSet("poi_layers", null)?.toSet()
+                ?: return MapPoi.entries.filter { it.default }.map { it.layer }.toSet()
+            // Radary dřív upozorňovaly vždy – kdo si POI vybral před jejich přidáním, má je dál zapnuté
+            if (!prefs.getBoolean("poi_radar_added", false)) {
+                val withRadar = stored + MapPoi.RADAR.layer
+                prefs.edit { putStringSet("poi_layers", withRadar); putBoolean("poi_radar_added", true) }
+                return withRadar
+            }
+            return stored
+        }
+        set(value) = prefs.edit { putStringSet("poi_layers", value); putBoolean("poi_radar_added", true) }
+
+    /** Radary na mapě a upozornění na ně za navigace. */
+    val showRadars: Boolean get() = MapPoi.RADAR.layer in poiLayers
 
     /** Vypnuto = aplikace stahuje a odesílá jen přes Wi-Fi (nebo jinou neměřenou síť). */
     var mobileData: Boolean

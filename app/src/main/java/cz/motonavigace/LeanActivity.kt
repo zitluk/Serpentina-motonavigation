@@ -126,6 +126,7 @@ class LeanActivity : AppCompatActivity(), LocationListener {
 
     override fun onLocationChanged(location: Location) {
         if (location.hasSpeed()) meter.onSpeed(LeanMeter.gpsSpeed(location), location.elapsedRealtimeNanos)
+        if (location.hasBearing()) meter.onCourse(location.bearing.toDouble(), location.elapsedRealtimeNanos)
     }
 
     @Suppress("DEPRECATION")

@@ -32,6 +32,11 @@
     <string name="search_bar">Where to?</string>
     <string name="search_title">Find destination</string>
     <string name="search_hint">Town, place or coordinates</string>
+    <string name="history_title">Recent destinations</string>
+    <string name="history_item">Recent destination · hold to remove</string>
+    <string name="history_clear">Clear history</string>
+    <string name="history_clear_confirm">Clear all recent destinations?</string>
+    <string name="history_remove">Remove from history</string>
     <string name="search_no_data">To search, download a region in Map downloads (it includes the places database).</string>
     <string name="search_nothing">Nothing found.</string>
     <string name="navigate">Navigate</string>
@@ -71,6 +76,7 @@
     <string name="recording_title">Ride recording</string>
     <string name="recording_start_manual">Start recording manually</string>
     <string name="recording_auto_start">Start recording when riding off (from 10 km/h)</string>
+    <string name="recording_ask_on_ride">Ask when a ride starts</string>
     <string name="recording_stop_after_nav">Stop recording when navigation ends</string>
     <string name="recording_auto_started">Ride recording started</string>
     <string name="recording_ask_message">You are riding without navigation. Record the ride to Saved rides?</string>
@@ -78,6 +84,8 @@
     <string name="recording_ask_no">Do not record</string>
     <string name="recording_ask_always">Always record when riding off</string>
     <string name="recording_stop">Stop recording</string>
+    <string name="recording_stop_ask">Stop recording the ride? %1$s so far.</string>
+    <string name="recording_continue">Keep recording</string>
     <string name="recording_saved">Ride saved: %1$s</string>
     <string name="round_trip">Ride around</string>
     <string name="round_trip_length">%1$d km · approx. %2$s</string>
@@ -92,8 +100,9 @@
     <string name="view_north">North up</string>
     <string name="ride_done_title">Ride finished</string>
     <string name="ride_done_message">You rode %1$s in %2$s. Show lean angle, speeds and other ride details?</string>
-    <string name="ride_show">Show</string>
-    <string name="ride_no">No</string>
+    <string name="ride_show">Show ride details</string>
+    <string name="ride_no">Not now</string>
+    <string name="close">Close</string>
     <string name="ride_summary_title">Ride summary</string>
     <string name="ride_distance">Distance</string>
     <string name="ride_time">Ride time</string>
@@ -180,6 +189,7 @@
     <string name="poi_none">None – clean map with roads and place names only</string>
     <string name="poi_all">All</string>
     <string name="poi_fuel">Fuel stations</string>
+    <string name="poi_radar">Speed cameras</string>
     <string name="poi_view">Viewpoints</string>
     <string name="poi_mountain_pass">Mountain passes</string>
     <string name="poi_mountain_peak">Peaks</string>
@@ -208,8 +218,8 @@
     <string name="bike_title">Navigate to your motorcycle?</string>
     <string name="bike_message">Your motorcycle is parked %1$s from here.</string>
     <string name="bike_destination">Motorcycle</string>
-    <string name="bike_navigate">Navigate</string>
-    <string name="bike_no">No</string>
+    <string name="bike_navigate">Navigate to the bike</string>
+    <string name="bike_no">Not now</string>
     <string name="quick_fuel">Fuel</string>
     <string name="quick_parking">Parking</string>
     <string name="quick_food">Food</string>

@@ -93,6 +93,12 @@ class MapController(
     private val pinVia = symbol(R.drawable.ic_pin_via)
     private val pinEnd = symbol(R.drawable.ic_pin_end)
     private val pins = ItemizedLayer(map, pinEnd)
+    /** Radary – ukazují se až od [RADAR_MIN_ZOOM], oddálená mapa by byla jimi posetá. */
+    private val radarSymbol = MarkerSymbol(
+        AndroidGraphics.drawableToBitmap(ContextCompat.getDrawable(context, R.drawable.ic_map_radar)!!),
+        MarkerSymbol.HotspotPlace.CENTER,
+    )
+    private val radars = ItemizedLayer(map, radarSymbol)
     /** Poloha jezdce: zvolená ikona ležící na mapě, natočená po směru jízdy. */
     private val location = ItemizedLayer(map, pinEnd)
     private var locationItem: MarkerItem? = null
@@ -121,7 +127,7 @@ class MapController(
                 lastUserMoveMs = SystemClock.uptimeMillis()
                 onUserMove?.invoke()
             }
-            if (e == org.oscim.map.Map.POSITION_EVENT) view.post { refreshLocationView() }
+            if (e == org.oscim.map.Map.POSITION_EVENT) view.post { refreshLocationView(); refreshRadarsVisibility() }
         })
 
         val layers = map.layers()
@@ -132,6 +138,7 @@ class MapController(
         layers.add(routeLayer)
         layers.add(recordedLayer)
         layers.add(arrows)
+        layers.add(radars)
         layers.add(pins)
         layers.add(location)
 
@@ -645,6 +652,18 @@ class MapController(
         map.updateMap(true)
     }
 
+    fun setRadars(positions: List<LatLong>) {
+        radars.removeAllItems()
+        radars.addItems(positions.map { MarkerItem("", "", GeoPoint(it.latitude, it.longitude)) })
+        refreshRadarsVisibility()
+        map.updateMap(true)
+    }
+
+    private fun refreshRadarsVisibility() {
+        val on = map.mapPosition.zoom >= RADAR_MIN_ZOOM
+        if (radars.isEnabled != on) radars.isEnabled = on
+    }
+
     fun setPins(start: LatLong?, vias: List<LatLong>, end: LatLong?) {
         pins.removeAllItems()
         val items = mutableListOf<MarkerInterface>()
@@ -722,6 +741,7 @@ class MapController(
         private const val CAMERA_SMOOTHING = 0.08f
         /** Po posledním dotyku mapy za navigace se kamera vrátí k jezdci po této době. */
         private const val FREE_LOOK_MS = 15_000L
+        private const val RADAR_MIN_ZOOM = 12.0
         /** Podíl zbývající vzdálenosti, o který střed mapy bez navigace dojede k jezdci za snímek. */
         private const val TRACK_SMOOTHING = 0.2
         private const val MIN_ZOOM = 3.0

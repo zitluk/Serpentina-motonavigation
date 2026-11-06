@@ -1,0 +1,10 @@
+<!-- Radar na mapě: červené kolečko s bílým lemem a kamerou, čitelné na světlé i noční mapě -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp" android:height="26dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M12,0.5a11.5,11.5 0,1 1,0 23a11.5,11.5 0,1 1,0 -23z" />
+    <path android:fillColor="#D32F2F"
+        android:pathData="M12,2a10,10 0,1 1,0 20a10,10 0,1 1,0 -20z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M6,8h8.5l2.5,-1.6v6.2l-2.5,-1.6H6c-0.4,0 -0.7,-0.3 -0.7,-0.7V8.7C5.3,8.3 5.6,8 6,8zM9,11.5h1.6v3.3h2.9v1.5H7.6v-1.5H9z" />
+</vector>

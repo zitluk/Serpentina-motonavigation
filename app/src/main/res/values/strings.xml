@@ -35,6 +35,11 @@
     <string name="search_bar">Kam jedeme?</string>
     <string name="search_title">Hledat cíl</string>
     <string name="search_hint">Obec, místo nebo souřadnice</string>
+    <string name="history_title">Nedávné cíle</string>
+    <string name="history_item">Nedávný cíl · podržením odebereš</string>
+    <string name="history_clear">Smazat historii</string>
+    <string name="history_clear_confirm">Smazat všechny nedávné cíle?</string>
+    <string name="history_remove">Odebrat z historie</string>
     <string name="search_no_data">Pro vyhledávání stáhni region v sekci Stažení map (obsahuje databázi míst).</string>
     <string name="search_nothing">Nic nenalezeno.</string>
     <string name="navigate">Navigovat</string>
@@ -74,6 +79,7 @@
     <string name="recording_title">Záznam jízdy</string>
     <string name="recording_start_manual">Spustit záznam manuálně</string>
     <string name="recording_auto_start">Spustit záznam po rozjezdu (od 10 km/h)</string>
+    <string name="recording_ask_on_ride">Zeptat se po zahájení jízdy</string>
     <string name="recording_stop_after_nav">Zastavit záznam po ukončení navigace</string>
     <string name="recording_auto_started">Záznam jízdy spuštěn</string>
     <string name="recording_ask_message">Jedeš bez navigace. Zaznamenat jízdu do Uložených jízd?</string>
@@ -81,6 +87,8 @@
     <string name="recording_ask_no">Nezaznamenávat</string>
     <string name="recording_ask_always">Vždy zaznamenávat po rozjezdu</string>
     <string name="recording_stop">Zastavit záznam</string>
+    <string name="recording_stop_ask">Zastavit záznam jízdy? Zatím ujeto %1$s.</string>
+    <string name="recording_continue">Pokračovat v záznamu</string>
     <string name="recording_saved">Jízda uložena: %1$s</string>
     <string name="round_trip">Projížďka po okolí</string>
     <string name="round_trip_length">%1$d km · cca %2$s</string>
@@ -95,8 +103,9 @@
     <string name="view_north">Sever nahoře</string>
     <string name="ride_done_title">Jízda dokončena</string>
     <string name="ride_done_message">Ujeto %1$s za %2$s. Chcete zobrazit náklon, rychlosti a další údaje z jízdy?</string>
-    <string name="ride_show">Zobrazit</string>
-    <string name="ride_no">Ne</string>
+    <string name="ride_show">Zobrazit údaje z jízdy</string>
+    <string name="ride_no">Nezobrazovat</string>
+    <string name="close">Zavřít</string>
     <string name="ride_summary_title">Souhrn jízdy</string>
     <string name="ride_distance">Vzdálenost</string>
     <string name="ride_time">Doba jízdy</string>
@@ -183,6 +192,7 @@
     <string name="poi_none">Žádné – čistá mapa jen se silnicemi a názvy míst</string>
     <string name="poi_all">Všechny</string>
     <string name="poi_fuel">Čerpací stanice</string>
+    <string name="poi_radar">Radary</string>
     <string name="poi_view">Vyhlídky</string>
     <string name="poi_mountain_pass">Horské průsmyky</string>
     <string name="poi_mountain_peak">Vrcholy</string>
@@ -211,8 +221,8 @@
     <string name="bike_title">Navigovat k motorce?</string>
     <string name="bike_message">Motorka zůstala zaparkovaná %1$s odsud.</string>
     <string name="bike_destination">Motorka</string>
-    <string name="bike_navigate">Navigovat</string>
-    <string name="bike_no">Ne</string>
+    <string name="bike_navigate">Navigovat k motorce</string>
+    <string name="bike_no">Nenavigovat</string>
     <string name="quick_fuel">Čerpací stanice</string>
     <string name="quick_parking">Parkoviště</string>
     <string name="quick_food">Občerstvení</string>

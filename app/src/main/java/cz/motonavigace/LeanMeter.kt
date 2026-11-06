@@ -2,6 +2,7 @@ package cz.motonavigace
 
 import kotlin.math.abs
 import kotlin.math.asin
+import kotlin.math.atan
 import kotlin.math.exp
 import kotlin.math.sqrt
 
@@ -41,8 +42,10 @@ data class LeanStats(
  * Akcelerometr sám náklon v zatáčce neukáže – při ustálené zatáčce míří zdánlivá
  * tíže pořád podél osy motorky. Za jízdy proto počítáme náklon z fyziky zatáčky:
  * sin(φ) = v · ω / g, kde ω je rychlost otáčení kolem svislé osy motorky (gyroskop
- * promítnutý do směru zdánlivé tíže) a v rychlost z GPS. Při stání (nebo bez gyroskopu)
- * se použije prostý náklon telefonu vůči tíži, opravený o kalibraci.
+ * promítnutý do směru zdánlivé tíže) a v rychlost z GPS. Telefon na řídítkách se ale otáčí
+ * i s každým pohybem řídítek a třese se s motorem – rychlost otáčení proto vyhlazujeme.
+ * Telefon bez gyroskopu bere rychlost otáčení ze změny směru jízdy podle GPS.
+ * Při stání se použije prostý náklon telefonu vůči tíži, opravený o kalibraci.
  *
  * Kladný úhel = náklon doprava.
  */
@@ -61,13 +64,20 @@ class LeanMeter(var calibration: Double = 0.0, var stats: LeanStats = LeanStats(
     private var hasGravity = false
     private var lastGyroNs = 0L
     private var lastSpeedNs = 0L
+    /** Vyhlazená rychlost otáčení z gyroskopu (rad/s, kladně = doleva). */
+    private var gyroYaw = 0.0
+    private var lastCourse = Double.NaN
+    private var lastCourseNs = 0L
 
-    /** Vektor tíže v souřadnicích telefonu (TYPE_GRAVITY nebo vyhlazený akcelerometr). */
-    fun onGravity(x: Float, y: Float, z: Float) {
+    /**
+     * Vektor tíže v souřadnicích telefonu (TYPE_GRAVITY nebo vyhlazený akcelerometr),
+     * [timestampNs] z SensorEvent.
+     */
+    fun onGravity(x: Float, y: Float, z: Float, timestampNs: Long = lastSpeedNs) {
         gravity[0] = x.toDouble(); gravity[1] = y.toDouble(); gravity[2] = z.toDouble()
         hasGravity = true
-        // Bez gyroskopu jsou jediným zdrojem náklonu data o tíži
-        if (lastGyroNs == 0L) filterLean(staticLean(), 0.1)
+        // Bez gyroskopu ukazuje tíže náklon jen při stání; za jízdy ho počítá změna směru z GPS
+        if (lastGyroNs == 0L && dynamicWeight(currentSpeed(timestampNs)) == 0.0) filterLean(staticLean(), 0.1)
     }
 
     /** Úhlová rychlost z gyroskopu v rad/s, [timestampNs] z SensorEvent. */
@@ -78,16 +88,30 @@ class LeanMeter(var calibration: Double = 0.0, var stats: LeanStats = LeanStats(
         if (dt <= 0.0 || dt > 1.0) return
 
         val g = norm(gravity)
-        // Rychlost otáčení kolem svislé osy motorky (kladně = doleva)
+        // Rychlost otáčení kolem svislé osy motorky (kladně = doleva); škubnutí řídítky
+        // a vibrace trvají zlomek sekundy, zatáčka déle – vyhlazení je odfiltruje
         val yaw = (x * gravity[0] + y * gravity[1] + z * gravity[2]) / g
-        // Bez čerstvé rychlosti z GPS (signál ztracený v budově, garáži) bereme, že motorka stojí –
-        // jinak by poslední rychlost z jízdy držela výpočet ze zatáčení a náklon telefonu by se neukázal
-        val v = if (timestampNs - lastSpeedNs > SPEED_STALE_NS) 0.0 else speed
-        val dynamic = Math.toDegrees(asin((-v * yaw / G).coerceIn(-1.0, 1.0)))
-        // Mezi 3 a 6 m/s (asi 11–22 km/h) plynule přecházíme ze statického na dynamický výpočet;
-        // pod tím je rychlost z GPS při stání jen šum
-        val w = ((v - 3.0) / 3.0).coerceIn(0.0, 1.0)
-        filterLean(w * dynamic + (1 - w) * staticLean(), dt)
+        gyroYaw += (yaw - gyroYaw) * (1 - exp(-dt / YAW_SMOOTHING_S))
+        val v = currentSpeed(timestampNs)
+        filterLean(blend(dynamicLean(v, gyroYaw), v), dt)
+    }
+
+    /**
+     * Směr jízdy z GPS (stupně od severu) – telefonu bez gyroskopu dá rychlost otáčení
+     * v zatáčce. S gyroskopem se nepoužije, ten je rychlejší a přesnější.
+     */
+    fun onCourse(bearingDeg: Double, elapsedNs: Long) {
+        val dt = (elapsedNs - lastCourseNs) / 1e9
+        val prev = lastCourse
+        lastCourse = bearingDeg
+        lastCourseNs = elapsedNs
+        if (lastGyroNs != 0L || prev.isNaN() || dt !in 0.3..3.0) return
+        // Doprava roste kurz, rychlost otáčení je kladná doleva
+        val turn = -(((bearingDeg - prev) % 360 + 540) % 360 - 180)
+        val yaw = Math.toRadians(turn) / dt
+        val v = currentSpeed(elapsedNs)
+        // Skutečná rychlost otáčení (ne promítnutá do osy nakloněného telefonu): tg(φ) = v · ω / g
+        if (dynamicWeight(v) > 0) filterLean(blend(Math.toDegrees(atan(-v * yaw / G)), v), dt)
     }
 
     /** Rychlost z GPS v m/s, [elapsedNs] = Location.elapsedRealtimeNanos. */
@@ -102,6 +126,26 @@ class LeanMeter(var calibration: Double = 0.0, var stats: LeanStats = LeanStats(
         lastSpeedNs = elapsedNs
         speed = speedMps
         record()
+    }
+
+    /**
+     * Bez čerstvé rychlosti z GPS (signál ztracený v budově, garáži) bereme, že motorka stojí –
+     * jinak by poslední rychlost z jízdy držela výpočet ze zatáčení a náklon telefonu by se neukázal.
+     */
+    private fun currentSpeed(nowNs: Long) = if (nowNs - lastSpeedNs > SPEED_STALE_NS) 0.0 else speed
+
+    /** Náklon z fyziky zatáčky: sin(φ) = v · ω / g (ω z gyroskopu promítnutá do osy nakloněné motorky). */
+    private fun dynamicLean(v: Double, yaw: Double) = Math.toDegrees(asin((-v * yaw / G).coerceIn(-1.0, 1.0)))
+
+    /**
+     * Mezi 3 a 6 m/s (asi 11–22 km/h) plynule přecházíme ze statického na dynamický výpočet;
+     * pod tím je rychlost z GPS při stání jen šum.
+     */
+    private fun dynamicWeight(v: Double) = ((v - 3.0) / 3.0).coerceIn(0.0, 1.0)
+
+    private fun blend(dynamic: Double, v: Double): Double {
+        val w = dynamicWeight(v)
+        return w * dynamic + (1 - w) * staticLean()
     }
 
     /** Současný náklon telefonu se bere jako svislá poloha motorky. */
@@ -122,8 +166,8 @@ class LeanMeter(var calibration: Double = 0.0, var stats: LeanStats = LeanStats(
     }
 
     private fun filterLean(target: Double, dt: Double) {
-        // Časová konstanta 0,25 s – potlačí vibrace motoru, ale náklon nezpozdí
-        lean += (target - lean) * (1 - exp(-dt / 0.25))
+        // Časová konstanta 0,3 s – potlačí zbylé chvění, ale náklon výrazně nezpozdí
+        lean += (target - lean) * (1 - exp(-dt / 0.3))
         record()
     }
 
@@ -151,6 +195,8 @@ class LeanMeter(var calibration: Double = 0.0, var stats: LeanStats = LeanStats(
         const val MIN_RECORD_SPEED = 3.0
         /** Rychlost z GPS starší než tohle (ns) už neplatí. */
         private const val SPEED_STALE_NS = 5_000_000_000L
+        /** Vyhlazení rychlosti otáčení z gyroskopu (s) – pohyby řídítek a vibrace jsou kratší. */
+        private const val YAW_SMOOTHING_S = 0.4
 
         /**
          * Rychlost z GPS pro měřák náklonu: když je menší než její vlastní nejistota (stání,

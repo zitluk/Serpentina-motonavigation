@@ -24,10 +24,13 @@ object GloveMenu {
         /** Zaškrtávací volba: ťuknutí ji přepne a nabídka zůstane otevřená. */
         var onToggle: ((Boolean) -> Unit)? = null
             private set
+        /** Zaškrtávací volby se stejnou skupinou se vylučují – zaškrtnutí jedné odškrtne ostatní. */
+        var group: String? = null
+            private set
 
         companion object {
-            fun checkbox(title: String, checked: Boolean, onToggle: (Boolean) -> Unit) =
-                Item(title, checked) {}.also { it.onToggle = onToggle }
+            fun checkbox(title: String, checked: Boolean, group: String? = null, onToggle: (Boolean) -> Unit) =
+                Item(title, checked) {}.also { it.onToggle = onToggle; it.group = group }
         }
     }
 
@@ -52,6 +55,7 @@ object GloveMenu {
                 setPadding(dp(24), dp(8), dp(24), dp(12))
             })
         }
+        val boxes = mutableListOf<Pair<Item, MaterialCheckBox>>()
         items.forEachIndexed { i, item ->
             val toggle = item.onToggle
             if (toggle != null) {
@@ -62,7 +66,12 @@ object GloveMenu {
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
                     minHeight = dp(64)
                     setPadding(dp(12), 0, dp(24), 0)
-                    setOnCheckedChangeListener { _, on -> toggle(on) }
+                    setOnCheckedChangeListener { _, on ->
+                        toggle(on)
+                        if (on && item.group != null) boxes.filter { (other, box) -> other !== item && other.group == item.group && box.isChecked }
+                            .forEach { (_, box) -> box.isChecked = false }
+                    }
+                    boxes += item to this
                 }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
                     .apply { marginStart = dp(40) })
                 return@forEachIndexed

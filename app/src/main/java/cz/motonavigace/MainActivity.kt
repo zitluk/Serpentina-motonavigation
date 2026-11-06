@@ -285,6 +285,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         mapCtl.onResume()
         // Volba z Nastavení – ikony bodů zájmu na mapě
         mapCtl.setPoiLayers(Settings.poiLayers)
+        showRadarsOnMap()
         Downloads.refresh(this)
         reloadMapsIfChanged()
         applyBikeDefaults()
@@ -512,9 +513,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
             else GloveMenu.Item(getString(R.string.recording_start_manual)) { requestRecording() }
         GloveMenu.show(this, getString(R.string.recording_title), listOf(
             manual,
-            GloveMenu.Item.checkbox(getString(R.string.recording_auto_start), Settings.autoStartRecording) {
+            // Buď záznam sám po rozjezdu, nebo dotaz – obojí naráz nedává smysl
+            GloveMenu.Item.checkbox(getString(R.string.recording_auto_start), Settings.autoStartRecording, group = "start") {
                 Settings.autoStartRecording = it
                 if (it) requestRecordingPermissions()
+            },
+            GloveMenu.Item.checkbox(getString(R.string.recording_ask_on_ride), Settings.askToRecord, group = "start") {
+                Settings.askToRecord = it
+                // Znovu zapnutý dotaz platí hned, i když jezdec dřív zvolil „Nezaznamenávat“
+                if (it) askRecordingAllowed = true
             },
             GloveMenu.Item.checkbox(getString(R.string.recording_stop_after_nav), Settings.stopRecordingAfterNavigation) {
                 Settings.stopRecordingAfterNavigation = it
@@ -753,14 +760,12 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val distance = here.sphericalDistance(bike)
         // U motorky, nebo když GPS ještě neví přesně, kde jsme, se neptáme
         if (distance <= BIKE_NEAR_METERS || distance <= location.accuracy) return
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.bike_title)
-            .setMessage(getString(R.string.bike_message, formatDistance(distance)))
-            .setNegativeButton(R.string.bike_no, null)
-            .setPositiveButton(R.string.bike_navigate) { _, _ ->
+        GloveMenu.show(this, getString(R.string.bike_title) + " " + getString(R.string.bike_message, formatDistance(distance)), listOf(
+            GloveMenu.Item(getString(R.string.bike_navigate)) {
                 onDestinationChosen(getString(R.string.bike_destination), bike, thenNavigate = true)
-            }
-            .show()
+            },
+            GloveMenu.Item(getString(R.string.bike_no)) {},
+        ))
     }
 
     @Deprecated("Deprecated in Java")
@@ -868,6 +873,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if ((navigator != null || recalculating) && here != null) {
             b.destinationName.text = name
             setWalking(position == bikePosition())
+            rememberDestination()
             b.navInstruction.setText(R.string.recalculating)
             recalculateFrom(LatLong(here.latitude, here.longitude))
             return
@@ -1191,6 +1197,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     /** Na záznam jízdy bez navigace se ptáme jen jednou za spuštění aplikace – po „Ne“ už ne. */
     private var askRecordingAllowed = true
+    /** Hned po navigaci se na záznam neptáme (přes souhrn jízdy) – až po zastavení a novém rozjezdu. */
+    private var askRecordingPaused = false
     private var askRecordingDialog: android.app.Dialog? = null
 
     /**
@@ -1205,7 +1213,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             askRecordingDialog?.dismiss()
             return
         }
-        if (kmh < Recording.AUTO_REARM_KMH) autoStartArmed = true
+        if (kmh < Recording.AUTO_REARM_KMH) { autoStartArmed = true; askRecordingPaused = false }
         if (kmh < Recording.AUTO_START_KMH ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
         ) return
@@ -1214,7 +1222,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
             autoStartArmed = false
             startRecording()
             Toast.makeText(this, R.string.recording_auto_started, Toast.LENGTH_SHORT).show()
-        } else if (navigator == null && askRecordingAllowed && askRecordingDialog == null &&
+        } else if (navigator == null && Settings.askToRecord && askRecordingAllowed && !askRecordingPaused && askRecordingDialog == null &&
             // Ne přes úvodní logo – zeptáme se až s viditelnou mapou
             b.startLogo.visibility != View.VISIBLE &&
             lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
@@ -1242,12 +1250,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun confirmStopRecording() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.recording_stop)
-            .setMessage(formatDistance(Recording.state.value.distanceMeters))
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.recording_stop) { _, _ -> Recording.stop(this) }
-            .show()
+        // Za jízdy v rukavicích – velké položky přes celou šířku
+        GloveMenu.show(this, getString(R.string.recording_stop_ask, formatDistance(Recording.state.value.distanceMeters)), listOf(
+            GloveMenu.Item(getString(R.string.recording_stop)) { Recording.stop(this) },
+            GloveMenu.Item(getString(R.string.recording_continue)) {},
+        ))
     }
 
     private var drawnRecordedPoints = 0
@@ -1286,7 +1293,16 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     // ---------------------------------------------------------------- navigace
 
+    /** Cíl navigace do historie v „Kam jedeme?“ – ne okruh ani cesta pěšky k motorce. */
+    private fun rememberDestination() {
+        val e = end ?: return
+        val name = destinationName ?: return
+        if (roundTripKm == null && !mapCtl.walking) DestinationHistory.add(this, name, e)
+    }
+
     private fun startNavigation() {
+        // Kdo navigaci spustí, je u motorky – navigaci k ní už po ukončení nenabízíme
+        askForBike = false
         val loc = lastLocation
         val r = route
         if (loc == null || r == null) {
@@ -1300,6 +1316,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         setWalking(end != null && end == bikePosition())
         // Náklon a souhrn jízdy se měří při každé navigaci na motorce
         if (!mapCtl.walking) startRide()
+        rememberDestination()
         // Během navigace jen vybraná trasa, šedé varianty by mátly
         mapCtl.showAlternatives(emptyList())
         mapCtl.startFollowing()
@@ -1337,6 +1354,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         if (lastLocation != null) mapCtl.startTracking()
         // Záznam jízdy skončí s navigací, pokud si to jezdec zaškrtl (uloží se do Tras a jízd)
         if (Settings.stopRecordingAfterNavigation && Recording.state.value.active) Recording.stop(this)
+        askRecordingPaused = true
         finishRide()?.let(::offerRideSummary)
     }
 
@@ -1357,6 +1375,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private fun onRideFix(location: Location, pos: LatLong) {
         val meter = rideMeter ?: return
         if (location.hasSpeed()) meter.onSpeed(LeanMeter.gpsSpeed(location), location.elapsedRealtimeNanos)
+        if (location.hasBearing()) meter.onCourse(location.bearing.toDouble(), location.elapsedRealtimeNanos)
         rideTracker?.onFix(pos, location.accuracy, location.speed, location.time)
     }
 
@@ -1372,12 +1391,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun offerRideSummary(r: RideSummary) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.ride_done_title)
-            .setMessage(getString(R.string.ride_done_message, formatDistance(r.distanceMeters), formatDuration(r.totalSeconds)))
-            .setNegativeButton(R.string.ride_no, null)
-            .setPositiveButton(R.string.ride_show) { _, _ -> showRideSummary(r) }
-            .show()
+        GloveMenu.show(this, getString(R.string.ride_done_title) + ". " +
+            getString(R.string.ride_done_message, formatDistance(r.distanceMeters), formatDuration(r.totalSeconds)), listOf(
+            GloveMenu.Item(getString(R.string.ride_show)) { showRideSummary(r) },
+            GloveMenu.Item(getString(R.string.ride_no)) {},
+        ))
     }
 
     private fun showRideSummary(r: RideSummary) {
@@ -1387,18 +1405,18 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val rows = listOf(
             R.string.ride_distance to formatDistance(r.distanceMeters),
             R.string.ride_time to formatDuration(r.totalSeconds) + " (" + getString(R.string.ride_moving, formatDuration(r.movingSeconds)) + ")",
-            R.string.ride_avg_speed to kmh(r.avgSpeed),
+            // Skok polohy (ztráta signálu) by průměr nafoukl nad maximum
+            R.string.ride_avg_speed to kmh(if (l.maxSpeed > 0) minOf(r.avgSpeed, l.maxSpeed) else r.avgSpeed),
             R.string.lean_max_speed to kmh(l.maxSpeed),
             R.string.lean_max_left to "${l.maxLeft.roundToInt()}°",
             R.string.lean_max_right to "${l.maxRight.roundToInt()}°",
             R.string.lean_max_accel to g(l.maxAccel),
             R.string.lean_max_brake to g(l.maxBrake),
         )
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.ride_summary_title)
-            .setMessage(rows.joinToString("\n") { (label, value) -> "${getString(label)}: $value" })
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
+        GloveMenu.show(this, getString(R.string.ride_summary_title) + "\n\n" +
+            rows.joinToString("\n") { (label, value) -> "${getString(label)}: $value" }, listOf(
+            GloveMenu.Item(getString(R.string.close)) {},
+        ))
     }
 
     @Suppress("DEPRECATION")
@@ -1507,6 +1525,15 @@ class MainActivity : AppCompatActivity(), LocationListener {
     private val warnedCameras = mutableSetOf<LatLong>()
     private val slowDownCameras = mutableSetOf<LatLong>()
 
+    /** Radary na mapě podle volby v bodech zájmu (z dat stažených zemí). */
+    private fun showRadarsOnMap() {
+        if (!Settings.showRadars) {
+            mapCtl.setRadars(emptyList())
+            return
+        }
+        lifecycleScope.launch { mapCtl.setRadars(SpeedCameras.all().map { it.position }) }
+    }
+
     private fun loadCameras(r: Route) {
         camerasJob?.cancel()
         routeCameras = emptyList()
@@ -1522,6 +1549,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
      * a ještě jednou, když jezdec u radaru jede rychleji, než se tam smí.
      */
     private fun showSpeedCamera(r: Route, state: NavState, location: Location) {
+        // Radary vypnuté v bodech zájmu – ani štítek, ani hlas
+        if (!Settings.showRadars) {
+            b.radarCard.visibility = View.GONE
+            return
+        }
         if (camerasFor !== r) loadCameras(r)
         val along = r.distances[state.segment] + r.points[state.segment].sphericalDistance(state.snapped)
         val fast = location.speed > 20 // ~70 km/h

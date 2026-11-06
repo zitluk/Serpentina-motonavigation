@@ -66,7 +66,7 @@ class SearchActivity : AppCompatActivity() {
                     quickButtons.keys.filter { it != button }.forEach { it.isChecked = false }
                     searchCategory(category)
                 } else {
-                    showResults(emptyList(), "")
+                    showHistory()
                 }
             }
         }
@@ -77,6 +77,8 @@ class SearchActivity : AppCompatActivity() {
         if (Storage.poiFiles().isEmpty()) {
             showMessage(getString(R.string.search_no_data))
         }
+        b.historyClear.setOnClickListener { confirmClearHistory() }
+        showHistory()
         b.query.doAfterTextChanged {
             // Psaní ruší rychlé hledání; prázdné pole po ťuknutí na čip výsledky čipu nesmaže
             if (!it.isNullOrBlank()) quickButtons.keys.forEach { button -> button.isChecked = false }
@@ -100,9 +102,15 @@ class SearchActivity : AppCompatActivity() {
     private fun scheduleSearch(debounceMs: Long) {
         searchJob?.cancel()
         val query = b.query.text?.toString().orEmpty()
+        if (query.isBlank()) {
+            showHistory()
+            return
+        }
         searchJob = lifecycleScope.launch {
             delay(debounceMs)
             val result = PoiSearch.search(query, near)
+            history = emptyList()
+            b.historyHeader.isVisible = false
             places = result
             b.results.adapter?.notifyDataSetChanged()
             showMessage(when {
@@ -131,6 +139,8 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun showResults(result: List<Place>, message: String) {
+        history = emptyList()
+        b.historyHeader.isVisible = false
         places = result
         b.results.adapter?.notifyDataSetChanged()
         showMessage(message)
@@ -140,6 +150,43 @@ class SearchActivity : AppCompatActivity() {
     private fun showMessage(message: String) {
         b.message.text = message
         b.message.isVisible = message.isNotEmpty()
+    }
+
+    // ---------------------------------------------------------------- historie cílů
+
+    /** Položky historie v [places] (stejné pořadí); prázdné = zobrazují se výsledky hledání. */
+    private var history: List<DestinationHistory.Entry> = emptyList()
+
+    /** Nedávné cíle, dokud jezdec nic nehledá. */
+    private fun showHistory() {
+        history = DestinationHistory.load(this)
+        places = history.map { e ->
+            Place(e.name, getString(R.string.history_item), e.position, near?.let { e.position.sphericalDistance(it) })
+        }
+        b.historyHeader.isVisible = history.isNotEmpty()
+        b.results.adapter?.notifyDataSetChanged()
+        if (Storage.poiFiles().isNotEmpty()) showMessage("")
+    }
+
+    private fun confirmClearHistory() {
+        GloveMenu.show(this, getString(R.string.history_clear_confirm), listOf(
+            GloveMenu.Item(getString(R.string.history_clear)) {
+                DestinationHistory.clear(this)
+                showHistory()
+            },
+            GloveMenu.Item(getString(R.string.cancel)) {},
+        ))
+    }
+
+    /** Dlouhý stisk na nedávný cíl – odebrat jen ten jeden. */
+    private fun offerRemove(entry: DestinationHistory.Entry) {
+        GloveMenu.show(this, entry.name, listOf(
+            GloveMenu.Item(getString(R.string.history_remove)) {
+                DestinationHistory.remove(this, entry)
+                showHistory()
+            },
+            GloveMenu.Item(getString(R.string.cancel)) {},
+        ))
     }
 
     private fun choose(place: Place) {
@@ -164,6 +211,11 @@ class SearchActivity : AppCompatActivity() {
             holder.b.detail.text = listOfNotNull(place.description.ifEmpty { null }, place.distance?.let(::formatDistance))
                 .joinToString(" · ")
             holder.b.root.setOnClickListener { choose(place) }
+            val entry = history.getOrNull(position)
+            holder.b.root.setOnLongClickListener {
+                entry?.let(::offerRemove)
+                entry != null
+            }
         }
     }
 }
