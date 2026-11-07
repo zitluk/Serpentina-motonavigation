@@ -175,7 +175,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         b.searchText.setOnClickListener { openSearch() }
         b.btnMenu.setOnClickListener { showMenu() }
-        b.btnDownloads.setOnClickListener { openDownloads() }
         b.btnNoMapsDownload.setOnClickListener { openDownloads() }
         b.btnLocation.setOnClickListener {
             // Za navigace po prohlížení mapy zpět k jezdci
@@ -190,10 +189,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.btnNavigate.setOnClickListener { startNavigation() }
         b.btnStopNav.setOnClickListener { stopNavigation() }
         b.btnNavMenu.setOnClickListener { showMenu() }
-        fabBackground = b.btnNavRecord.backgroundTintList
-        b.btnNavRecord.setOnClickListener {
-            if (Recording.state.value.active) confirmStopRecording() else requestRecording()
-        }
+        fabBackground = b.btnRecord.backgroundTintList
+        b.btnRecord.setOnClickListener { showRecordingMenu() }
         // Výška horního pruhu s pokynem i spodního panelu se mění (pruhy, zalomený text) – jezdec drží střed volné mapy
         listOf(b.navTop, b.navPanel).forEach { panel ->
             panel.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
@@ -453,8 +450,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val loc = IntArray(2)
         b.btnZoomOut.getLocationOnScreen(loc)
         val zoomBottom = loc[1] + b.btnZoomOut.height
-        // Schované tlačítko nemá polohu, záznam leží 24 dp pod „−“ a je stejně velký
-        val recBottom = zoomBottom + (24 * resources.displayMetrics.density).toInt() + b.btnZoomOut.height
         fun coveredAbove(bottom: Int): Boolean =
             listOf(b.routePanel, b.navPanel).any { panel ->
                 panel.visibility == View.VISIBLE && run { panel.getLocationOnScreen(loc); loc[1] < bottom }
@@ -466,8 +461,6 @@ class MainActivity : AppCompatActivity(), LocationListener {
         val zoomCovered = coveredAbove(zoomBottom)
         b.btnZoomIn.showIf(!zoomCovered)
         b.btnZoomOut.showIf(!zoomCovered)
-        // Záznam jen za navigace; pod spodním panelem by nešel stisknout
-        b.btnNavRecord.showIf(b.navPanel.visibility == View.VISIBLE && !coveredAbove(recBottom))
     }
 
     /** Mapa se kreslí pod systémové lišty, ovládací prvky se od nich odsadí. */
@@ -510,7 +503,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
      */
     private fun showRecordingMenu() {
         val manual = if (Recording.state.value.active) GloveMenu.Item(getString(R.string.recording_stop)) { confirmStopRecording() }
-            else GloveMenu.Item(getString(R.string.recording_start_manual)) { requestRecording() }
+            else GloveMenu.Item(getString(R.string.recording_start_manual), highlighted = true) { requestRecording() }
         GloveMenu.show(this, getString(R.string.recording_title), listOf(
             manual,
             // Buď záznam sám po rozjezdu, nebo dotaz – obojí naráz nedává smysl
@@ -1267,12 +1260,11 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun onRecordingState(state: Recording.State) {
         b.recChip.visibility = if (state.active) View.VISIBLE else View.GONE
-        // Během záznamu je tlačítko v navigaci červené a záznam zastavuje
-        b.btnNavRecord.apply {
+        // Během záznamu je tlačítko záznamu plně červené
+        b.btnRecord.apply {
             val red = 0xFFC62828.toInt()
             backgroundTintList = if (state.active) ColorStateList.valueOf(red) else fabBackground
             imageTintList = ColorStateList.valueOf(if (state.active) Color.WHITE else red)
-            contentDescription = getString(if (state.active) R.string.recording_stop else R.string.recording_start)
         }
         if (!state.active) {
             if (drawnRecordedPoints > 0) {
@@ -1430,11 +1422,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     private fun setNavigationUi(on: Boolean) {
         b.searchBar.visibility = if (on) View.GONE else View.VISIBLE
-        b.btnDownloads.visibility = if (on) View.GONE else View.VISIBLE
         b.routePanel.visibility = if (!on && end != null) View.VISIBLE else View.GONE
         b.navTop.visibility = if (on) View.VISIBLE else View.GONE
         b.navPanel.visibility = if (on) View.VISIBLE else View.GONE
-        if (on) b.btnNavRecord.show() else b.btnNavRecord.hide()
         mapCtl.setRouteProgress(on)
         if (on) b.updateCard.visibility = View.GONE else showUpdateCard()
         stopNavigationOnBack.isEnabled = on

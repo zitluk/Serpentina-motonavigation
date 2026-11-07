@@ -77,7 +77,7 @@
     <string name="radar_slow_down">Zpomalte</string>
     <string name="recording_start">Spustit záznam jízdy</string>
     <string name="recording_title">Záznam jízdy</string>
-    <string name="recording_start_manual">Spustit záznam manuálně</string>
+    <string name="recording_start_manual">Spustit záznam nyní</string>
     <string name="recording_auto_start">Spustit záznam po rozjezdu (od 10 km/h)</string>
     <string name="recording_ask_on_ride">Zeptat se po zahájení jízdy</string>
     <string name="recording_stop_after_nav">Zastavit záznam po ukončení navigace</string>
@@ -106,6 +106,7 @@
     <string name="ride_show">Zobrazit údaje z jízdy</string>
     <string name="ride_no">Nezobrazovat</string>
     <string name="close">Zavřít</string>
+    <string name="back">Zpět</string>
     <string name="ride_summary_title">Souhrn jízdy</string>
     <string name="ride_distance">Vzdálenost</string>
     <string name="ride_time">Doba jízdy</string>

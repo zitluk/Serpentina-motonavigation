@@ -290,16 +290,18 @@
                 android:layout_gravity="end"
                 android:orientation="vertical">
 
-                <!-- Všechna tlačítka 64 dp, aby se dala trefit v rukavicích -->
+                <!-- Všechna tlačítka 64 dp, aby se dala trefit v rukavicích.
+                     Záznam jízdy vždy po ruce – otevře nabídku Záznam jízdy, během záznamu je červený. -->
                 <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/btnDownloads"
+                    android:id="@+id/btnRecord"
                     style="?attr/floatingActionButtonSecondaryStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:contentDescription="@string/offline_data"
+                    android:contentDescription="@string/recording_title"
                     app:fabCustomSize="64dp"
                     app:maxImageSize="30dp"
-                    app:srcCompat="@drawable/ic_download" />
+                    app:srcCompat="@drawable/ic_record"
+                    app:tint="#C62828" />
 
                 <!-- Režim zobrazení mapy: 3D / 2D / sever nahoře -->
                 <Button
@@ -354,20 +356,6 @@
                     app:fabCustomSize="64dp"
                     app:maxImageSize="34dp"
                     app:srcCompat="@drawable/ic_zoom_out" />
-
-                <!-- Záznam jízdy za jízdy – menu je během navigace schované -->
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/btnNavRecord"
-                    style="?attr/floatingActionButtonSecondaryStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:contentDescription="@string/recording_start"
-                    android:visibility="gone"
-                    app:fabCustomSize="64dp"
-                    app:maxImageSize="30dp"
-                    app:srcCompat="@drawable/ic_record"
-                    app:tint="#C62828" />
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>

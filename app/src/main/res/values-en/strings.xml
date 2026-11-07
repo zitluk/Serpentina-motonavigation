@@ -74,7 +74,7 @@
     <string name="radar_slow_down">Slow down</string>
     <string name="recording_start">Start ride recording</string>
     <string name="recording_title">Ride recording</string>
-    <string name="recording_start_manual">Start recording manually</string>
+    <string name="recording_start_manual">Start recording now</string>
     <string name="recording_auto_start">Start recording when riding off (from 10 km/h)</string>
     <string name="recording_ask_on_ride">Ask when a ride starts</string>
     <string name="recording_stop_after_nav">Stop recording when navigation ends</string>
@@ -103,6 +103,7 @@
     <string name="ride_show">Show ride details</string>
     <string name="ride_no">Not now</string>
     <string name="close">Close</string>
+    <string name="back">Back</string>
     <string name="ride_summary_title">Ride summary</string>
     <string name="ride_distance">Distance</string>
     <string name="ride_time">Ride time</string>
