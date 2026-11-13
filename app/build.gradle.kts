@@ -12,8 +12,8 @@ android {
         applicationId = "cz.motonavigace"
         minSdk = 26
         targetSdk = 37
-        versionCode = 15
-        versionName = "0.4.9"
+        versionCode = 16
+        versionName = "0.4.10"
     }
 
     // Klíč pro vydání je jen na počítači vývojáře (~/.gradle/gradle.properties), v repozitáři není;
