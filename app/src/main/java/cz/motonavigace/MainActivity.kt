@@ -191,8 +191,9 @@ class MainActivity : AppCompatActivity(), LocationListener {
         b.btnNavMenu.setOnClickListener { showMenu() }
         fabBackground = b.btnRecord.backgroundTintList
         b.btnRecord.setOnClickListener { showRecordingMenu() }
-        // Výška horního pruhu s pokynem i spodního panelu se mění (pruhy, zalomený text) – jezdec drží střed volné mapy
-        listOf(b.navTop, b.navPanel).forEach { panel ->
+        // Výška horního pruhu s pokynem i spodního panelu se mění (pruhy, zalomený text) a po otočení
+        // i rozměr mapy a poloha tlačítek – jezdec drží střed volné mapy
+        listOf(b.navTop, b.navPanel, b.mapView, b.fabs).forEach { panel ->
             panel.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
                 if (b.navPanel.visibility == View.VISIBLE) updateNavPivot()
             }
@@ -383,13 +384,31 @@ class MainActivity : AppCompatActivity(), LocationListener {
      * a spodním panelem (doprostřed té třetiny) – před motorkou je vidět víc silnice.
      */
     private fun updateNavPivot() {
+        val w = b.mapView.width.takeIf { it > 0 } ?: return
         val h = b.mapView.height.takeIf { it > 0 } ?: return
-        val mapTop = IntArray(2).also(b.mapView::getLocationInWindow)[1]
-        val top = IntArray(2).also(b.navTop::getLocationInWindow)[1] + b.navTop.height - mapTop
-        val bottom = IntArray(2).also(b.navPanel::getLocationInWindow)[1] - mapTop
+        val loc = IntArray(2)
+        b.mapView.getLocationInWindow(loc)
+        val mapLeft = loc[0]
+        val mapTop = loc[1]
+        b.navTop.getLocationInWindow(loc)
+        val barTop = loc[1] - mapTop
+        val barBottom = barTop + b.navTop.height
+        val barRight = loc[0] - mapLeft + b.navTop.width
+        b.navPanel.getLocationInWindow(loc)
+        val panelTop = loc[1] - mapTop
+        val panelBottom = panelTop + b.navPanel.height
+        val panelRight = loc[0] - mapLeft + b.navPanel.width
+        val fabsLeft = IntArray(2).also(b.fabs::getLocationInWindow)[0] - mapLeft
+        // Na šířku a na tabletu leží horní pruh i spodní panel vlevo (adaptToScreen) a nad sebou
+        // mezi nimi skoro nic nezbude – jezdec pak jede ve volném pruhu vpravo od nich, před tlačítky.
+        // Bez toho by zůstal uprostřed šířky obrazovky, tedy pod panely.
+        val left = maxOf(barRight, panelRight)
+        val beside = b.navPanel.width < w * 0.7 && fabsLeft - left >= MIN_RIDER_STRIP_DP * resources.displayMetrics.density
+        val (riderX, top, bottom) = if (beside) Triple((left + fabsLeft) / 2f, barTop, panelBottom)
+            else Triple(w / 2f, barBottom, panelTop)
         if (bottom <= top) return
-        val rider = top + (bottom - top) * NAV_RIDER_POSITION
-        mapCtl.setNavPivot((rider - h / 2f) / (h / 2f))
+        val riderY = top + (bottom - top) * NAV_RIDER_POSITION
+        mapCtl.setNavPivot((riderX - w / 2f) / (w / 2f), (riderY - h / 2f) / (h / 2f))
     }
 
     /** Upozornění na novou verzi – ne během navigace a ne u verze, kterou uživatel zavřel. */
@@ -1265,6 +1284,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
             val red = 0xFFC62828.toInt()
             backgroundTintList = if (state.active) ColorStateList.valueOf(red) else fabBackground
             imageTintList = ColorStateList.valueOf(if (state.active) Color.WHITE else red)
+            // Čtečka obrazovky barvu nevidí – stav záznamu musí slyšet
+            contentDescription = getString(if (state.active) R.string.recording_running else R.string.recording_title)
         }
         if (!state.active) {
             if (drawnRecordedPoints > 0) {
@@ -1651,6 +1672,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
         const val PRECISE_ACCURACY = 30f
         /** Kde stojí jezdec při navigaci: podíl výšky volné mapy od horního pruhu (5/6 = střed spodní třetiny). */
         const val NAV_RIDER_POSITION = 5f / 6f
+        /** Nejužší volný pruh vedle panelů (dp), do kterého má smysl jezdce posadit. */
+        const val MIN_RIDER_STRIP_DP = 96
         /** Odkud upozornit na radar (m), nad ~70 km/h dřív. */
         const val CAMERA_WARN = 400.0
         const val CAMERA_WARN_FAST = 700.0

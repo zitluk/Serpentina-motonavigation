@@ -63,30 +63,32 @@ object GloveMenu {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dp(8), 0, dp(24))
         }
-        // Šipka zpět vedle názvu – jen když nabídka vyplní celou obrazovku a není vidět, že jde zavřít
-        var back: View? = null
+        // Šipka zpět vedle názvu – jen když nabídka vyplní celou obrazovku a není vidět, že jde zavřít.
+        // Řádek se šipkou má i nabídka bez názvu (hlavní menu bývá nejdelší); bez šipky je pak prázdný.
         var titleView: TextView? = null
-        title?.let {
-            list.addView(LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                back = ImageButton(context).apply {
-                    setImageResource(R.drawable.ic_arrow_back)
-                    imageTintList = ColorStateList.valueOf(
-                        MaterialColors.getColor(context, com.google.android.material.R.attr.colorOnSurface, 0))
-                    contentDescription = context.getString(R.string.back)
-                    setBackgroundResource(ripple)
-                    visibility = View.GONE
-                    setOnClickListener { dialog.dismiss() }
-                }.also { b -> addView(b, LinearLayout.LayoutParams(dp(64), dp(64)).apply { marginStart = dp(8) }) }
+        val back = ImageButton(context).apply {
+            setImageResource(R.drawable.ic_arrow_back)
+            imageTintList = ColorStateList.valueOf(
+                MaterialColors.getColor(context, com.google.android.material.R.attr.colorOnSurface, 0))
+            contentDescription = context.getString(R.string.back)
+            setBackgroundResource(ripple)
+            visibility = View.GONE
+            // Jako stažení dolů – volající, které zavření bere jako „Ne“, se to dozví přes OnCancelListener
+            setOnClickListener { dialog.cancel() }
+        }
+        list.addView(LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(back, LinearLayout.LayoutParams(dp(64), dp(64)).apply { marginStart = dp(8) })
+            title?.let {
                 addView(TextView(context).apply {
                     text = it
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
                     setPadding(dp(24), dp(8), dp(24), dp(12))
                     titleView = this
                 }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            })
-        }
+            }
+        })
         val boxes = mutableListOf<Pair<Item, MaterialCheckBox>>()
         items.forEachIndexed { i, item ->
             val toggle = item.onToggle
@@ -134,17 +136,23 @@ object GloveMenu {
         dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         dialog.behavior.skipCollapsed = true
         dialog.show()
-        back?.let { arrow ->
-            dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.let { sheet ->
-                sheet.addOnLayoutChangeListener { _, _, top, _, bottom, _, _, _, _ ->
-                    val full = bottom - top >= sheet.rootView.height * FULL_SCREEN_SHARE
-                    val wanted = if (full) View.VISIBLE else View.GONE
-                    if (arrow.visibility != wanted) arrow.post {
-                        arrow.visibility = wanted
-                        // Název hned za šipkou, bez šipky odsazený jako položky pod ním
-                        titleView?.let { t -> t.setPaddingRelative(dp(if (full) 8 else 24), t.paddingTop, t.paddingEnd, t.paddingBottom) }
-                    }
+        dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.let { sheet ->
+            // Šipka se nastaví až po rozvržení; víc změn rozvržení před tím sloučí jedno čekající post()
+            var pending = false
+            val update = Runnable {
+                pending = false
+                // Porovnává se s prostorem, který má nabídka k dispozici (bez systémových lišt), ne s celým oknem
+                val available = (sheet.parent as? View)?.height ?: sheet.rootView.height
+                val full = available > 0 && sheet.height >= available * FULL_SCREEN_SHARE
+                val wanted = if (full) View.VISIBLE else View.GONE
+                if (back.visibility != wanted) {
+                    back.visibility = wanted
+                    // Název hned za šipkou, bez šipky odsazený jako položky pod ním
+                    titleView?.let { t -> t.setPaddingRelative(dp(if (full) 8 else 24), t.paddingTop, t.paddingEnd, t.paddingBottom) }
                 }
+            }
+            sheet.addOnLayoutChangeListener { _, _, top, _, bottom, _, oldTop, _, oldBottom ->
+                if (!pending && bottom - top != oldBottom - oldTop) { pending = true; sheet.post(update) }
             }
         }
         return dialog

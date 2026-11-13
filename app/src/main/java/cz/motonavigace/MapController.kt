@@ -316,7 +316,7 @@ class MapController(
         if (newMode == MapViewMode.NORTH_UP) pos.setBearing(0f)
         if (navigating) {
             // Za navigace kameru vede plynulý pohyb, náklon a natočení k cíli dojedou samy
-            map.viewport().setMapViewCenter(0f, navPivotY())
+            map.viewport().setMapViewCenter(navPivotX, navPivotY)
             camTilt = pos.tilt
             if (newMode == MapViewMode.NORTH_UP) camBearing = 0f
             kickGlide()
@@ -381,7 +381,7 @@ class MapController(
         freeLookUntil = 0
         tracking = false
         navigating = true
-        map.viewport().setMapViewCenter(0f, navPivotY())
+        map.viewport().setMapViewCenter(navPivotX, navPivotY)
     }
 
     /** Konec navigace; mapa se vrátí na [center] (poloha jezdce), pokud ho známe. */
@@ -415,20 +415,21 @@ class MapController(
     }
 
     /**
-     * Svislá poloha jezdce při navigaci (−1 nahoře, 0 uprostřed, 1 dole). Nastavuje ji obrazovka
-     * do spodní třetiny viditelné mapy mezi horním pruhem s pokynem a spodním panelem.
+     * Poloha jezdce při navigaci (vodorovně −1 vlevo … 1 vpravo, svisle −1 nahoře … 1 dole,
+     * 0 uprostřed). Nastavuje ji obrazovka do spodní části mapy, kterou nezakrývají panely –
+     * na šířku je to pruh vpravo od panelů, jinak pás mezi horním pruhem a spodním panelem.
      */
-    private var navPivot = 0f
+    private var navPivotX = 0f
+    private var navPivotY = 0f
 
-    fun setNavPivot(pivotY: Float) {
-        navPivot = pivotY.coerceIn(-0.9f, 0.9f)
+    fun setNavPivot(pivotX: Float, pivotY: Float) {
+        navPivotX = pivotX.coerceIn(-0.9f, 0.9f)
+        navPivotY = pivotY.coerceIn(-0.9f, 0.9f)
         if (navigating) {
-            map.viewport().setMapViewCenter(0f, navPivot)
+            map.viewport().setMapViewCenter(navPivotX, navPivotY)
             map.updateMap(true)
         }
     }
-
-    private fun navPivotY() = navPivot
 
     // ---------------------------------------------------------------- překryvy
 
